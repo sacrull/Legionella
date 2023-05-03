@@ -1,6 +1,6 @@
 # Qiime2 Pipeline for 16S reads
 ## 1. Renaming Fastq Files
-My fastq files had names that I wanted to change to become more informative for the samples
+My fastq files had names that I wanted to change to become more informative for the samples. I created a files with the new names for forward and reverse reads.
 ### R1 Reads
 Renaming R1 reads of fastq files
 ```
