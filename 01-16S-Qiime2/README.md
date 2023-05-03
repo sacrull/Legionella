@@ -95,7 +95,6 @@ Make sure you have the files from ezbio cloud
 Get your files
 ```
 cp ./representative-sequences-16S.qza ~/legionella/16S/ezbio/
-cp
 ```
 ### Get files into Qiime2
 ```
