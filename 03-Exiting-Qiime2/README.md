@@ -64,7 +64,7 @@ unzip representative-sequences-16S.qza
 #### 4.b Rename file
 Go into the directory, rename the file, and move it.
 ```
-cp dna-sequences.fasta ~/legionella/R/16S_rep_seqs_silva.fasta
+cp dna-sequences.fasta ~/legionella/R/16S_rep_seqs.fasta
 ```
 
 ## 18S
