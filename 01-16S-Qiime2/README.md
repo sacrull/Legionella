@@ -1,14 +1,14 @@
-### Qiime2 Pipeline for 16S reads
+# Qiime2 Pipeline for 16S reads
 ## 1. Renaming Fastq Files
 My fastq files had names that I wanted to change to become more informative for the samples
-# R1 Reads
+### R1 Reads
 Renaming R1 reads of fastq files
 ```
 ls *_R1_*.fastq | sort -n > num_order_R1.txt
 paste -d"\t" num_order_R1.txt new_name_R1.txt > name_R1_map.txt
 awk -F'/t' 'system("cp " $1 " " $2)' name_R1_map.txt
 ```
-# R2 Reads
+### R2 Reads
 Renaming R2 reads of fastq files
 ```
 ls *_R2_*.fastq | sort -n > num_order_R2.txt
@@ -54,14 +54,14 @@ qiime demux summarize \
 Export paired-end-demux-sum-viz.qzv and visualize it. I used cyberduck to export and used the qiime2 [web browser](https://view.qiime2.org/) for visualization
 ## 5. DADA2 pipeline
 No cutadapt was used since there were no primers in the sequencing
-# Make a directory
+### Make a directory
 Make a directory for the denoising steps to occur in
 ```
 mkdir denoise
 cp paired-end-demux.qza ./denoise
 cp metadata_16S.txt ./denoise
 ```
-# Denoise data
+### Denoise data
 ```
 qiime dada2 denoise-paired \
 --i-demultiplexed-seqs paired-end-demux.qza \
@@ -72,7 +72,7 @@ qiime dada2 denoise-paired \
 --o-table feature-table-16S.qza \
 --o-denoising-stats dada2-stats-16S.qza
 ```
-# Visualize in order to check results
+### Visualize in order to check results
 ```
 qiime metadata tabulate \
   --m-input-file dada2-stats-16S.qza \
@@ -87,17 +87,17 @@ qiime feature-table tabulate-seqs \
 ```
 ## 6. Assigning taxonomy
 Ezbio cloud was used since my data was 16S
-# Importing Ezbio Cloud
+### Importing Ezbio Cloud
 Request the database from their [website](https://www.ezbiocloud.net/resources/16s_download)
 Upload the files into your directory
-# Get all the files you will need into ./ezbio
+### Get all the files you will need into ./ezbio
 Make sure you have the files from ezbio cloud
 Get your files
 ```
 cp ./representative-sequences-16S.qza ~/legionella/16S/ezbio/
 cp
 ```
-# Get files into Qiime2
+### Get files into Qiime2
 ```
 qiime tools import \
 --type 'FeatureData[Sequence]' \
@@ -110,7 +110,7 @@ qiime tools import \
 --input-path ezbiocloud_id_taxonomy.txt \
 --output-path ref-taxonomy-16S.qza
 ```
-# Get reads and train classifier
+### Get reads and train classifier
 I used my primers for this part. You should use your own primers.
 ```
 qiime feature-classifier extract-reads \
@@ -125,7 +125,7 @@ qiime feature-classifier fit-classifier-naive-bayes \
  --o-classifier classifier_EZ_V3V4-test1.qza
 	actual classification
 ```
-# Assign taxonomy
+### Assign taxonomy
 ```
 qiime feature-classifier classify-sklearn \
   --i-classifier classifier_EZ_V3V4-test1.qza \
