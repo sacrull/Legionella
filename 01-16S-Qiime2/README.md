@@ -140,6 +140,7 @@ qiime metadata tabulate \
   --o-visualization taxonomy-16S.qzv
 ```
 ## 7. Filter taxonomy
+Only keep what was assigned to bacteria
 ```
 qiime taxa filter-table \
   --i-table feature-table-0.qza \
