@@ -1,13 +1,13 @@
 # Qiime2 Pipeline for 18S reads
 ## 1. Renaming Fastq Files
 Move to your directory with your reads. I am renaming my files since I want more informative names. 
-# R1 Reads
+### R1 Reads
 ```
 ls *_R1_*.fastq | sort -n > num_order_R1_18S.txt
 paste -d"\t" num_order_R1_18S.txt new_name_R1_18S.txt > name_R1_map_18S.txt
 awk -F'/t' 'system("cp " $1 " " $2)' name_R1_map_18S.txt
 ```
-# R2 Reads
+### R2 Reads
 ```
 ls *_R2_*.fastq | sort -n > num_order_R2_18S.txt
 paste -d"\t" num_order_R2_18S.txt new_name_R2_18S.txt > name_R2_map_18S.txt
@@ -43,14 +43,14 @@ qiime demux summarize \
   --o-visualization ./paired-end-demux-sum-18S.qzv
 ```
 ## 5. Denoise
-#Make denoise directory
+### Make denoise directory
 ```
 cd ~/legionella/18S
 mkdir denoise
 cp paired-end-demux-18S.qza ./denoise
 cd denoise
 ```
-# Cutadapt
+### Cutadapt
 I had to remove the reverse compilment of primers since there was a lot of variety in my sequence read length
 ```
 qiime cutadapt trim-paired \
@@ -68,7 +68,7 @@ qiime demux summarize \
   --i-data ./primer-trimmed.qza \
   --o-visualization ./primer-trimmed-18S.qzv
 ```
-# DADA2
+### DADA2
 No trimming was done because of the variable sequence length
 ```
 qiime dada2 denoise-paired \
