@@ -53,7 +53,7 @@ Manually look through taxonomy to make sure it looks normal.
 Upload taxonomy back to machine into the `~/legionella/R`
 Get rid of __ and taxa level indicators
 ```
-sed 's/d__//g' taxonomy_16S.txt | sed 's/;[pcfogs]__/\t/g' > temp
+sed 's/;/\t/g' taxonomy_16S.txt | sed '1d' > temp
 mv temp taxonomy_18S.txt
 ```
 ### 4. Representative Sequences
@@ -62,7 +62,7 @@ mv temp taxonomy_18S.txt
 unzip representative-sequences-16S.qza
 ```
 #### 4.b Rename file
-Go into the directory and rename it.
+Go into the directory, rename the file, and move it.
 ```
 cp dna-sequences.fasta ~/legionella/R/16S_rep_seqs_silva.fasta
 ```
@@ -118,7 +118,7 @@ Manually look through taxonomy to make sure it looks normal.
 Upload taxonomy back to machine into the `~/legionella/R`
 Get rid of __ and taxa level indicators
 ```
-sed 's/d__//g' taxonomy_18S.txt | sed 's/;[pcfogs]__/\t/g' > temp
+sed 's/d__//g' taxonomy_18S.txt | sed 's/;[pcfogs]__/\t/g' | sed '1d' > temp
 mv temp taxonomy_18S.txt
 ```
 ### 4. Representative Sequences
@@ -127,7 +127,7 @@ mv temp taxonomy_18S.txt
 unzip representative-sequences-18S.qza
 ```
 #### 4.b Rename file
-Go into the directory and rename it.
+Go into the directory, rename the file, and move it.
 ```
 cp dna-sequences.fasta ~/legionella/R/18S_rep_seqs_silva.fasta
 ```
