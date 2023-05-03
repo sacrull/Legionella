@@ -76,7 +76,7 @@ qiime dada2 denoise-paired \
 --p-trunc-len-f 0 \
 --p-trunc-len-r 0 \
 --p-n-threads 6 \
---o-representative-sequences representative-sequences-18S-.qza \
+--o-representative-sequences representative-sequences-18Sqza \
 --o-table feature-table-18S.qza \
 --o-denoising-stats dada2-stats-18S.qza
 ```
