@@ -17,7 +17,7 @@ otu_18S <-otu_table(seqtab_18S_trans, taxa_are_rows=F)
 ```
 Taxonomy
 ```R
-tax_18S <- read.table("taxonomy_18S_clean.txt", header=F, row.names=1, sep="\t")
+tax_18S <- read.table("taxonomy_18S.txt", header=F, row.names=1, sep="\t")
 tax_18S_phylo <- tax_table(as.matrix(tax_18S))
 #taxa_names(tax_18S_phylo)
 ```
@@ -50,7 +50,7 @@ new_ref<-as.data.frame(refseq(physeq_18S))
 refseq(physeq_18S) %>% Biostrings::writeXStringSet("plz.fna", append=FALSE, compress=FALSE, compression_level=NA, format="fasta")
 ```
 ## 5. Clean up new files in terminal
-Fixing representative sequences
+Fixing representative sequences. Remove wrapper from text,
 ```bash
 awk '!/^>/ { printf "%s", $0; n = "\n" } 
 /^>/ { print n $0; n = "" }
@@ -66,4 +66,5 @@ sed 's/"//g' 18S-ASV.txt | sed -z 's/\t/OTU\t/'  > 18S-ASV-renamed.txt
 ```bash
 cp 18S-tax-renamed.txt ~/legionella/R
 cp 18S-ASV-renamed.txt ~/legionella/R
+cp ref-seq-18S.fasta ~/legionella/R
 ```
