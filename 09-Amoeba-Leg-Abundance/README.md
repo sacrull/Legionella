@@ -2,13 +2,12 @@
 ## 1. Load in packages
 ```R
 library(phyloseq)
-```
 library(tidyverse)
 library(dplyr)
 library(microbiome)
 library(scales)
 library(ggplot2)
-
+```
 ## 2. Get 18S data into phyloseq
 ### Frequency table
 ```R
