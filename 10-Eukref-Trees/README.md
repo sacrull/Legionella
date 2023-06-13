@@ -2,29 +2,35 @@
 Example shown is for Korotnevella tree and heatmap. All trees and heatmap follow the same method.
 ## 1. Install
 Create conda envioment for tree
-```sh
+```bash
+cd
 conda create -n eukref
+cd bin
 wget https://drive5.com/downloads/usearch8.0.1623_i86linux32.gz
 gzip -d usearch8.0.1623_i86linux32.gz
 chmod +x usearch8.0.1623_i86linux32
 mv usearch8.0.1623_i86linux32 usearch
+wget http://trimal.cgenomics.org/_media/trimal.v1.2rev59.tar.gz
+tar -xvzf trimal.v1.2rev59.tar.gz
+cd trimAl/source
+make
+mv trimal ../..
+conda activae eukref
 conda install -c conda-forge biopython
 conda install -c bioconda seqtk
-conda install -c "bioconda/label/cf201901" blast
-wget https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.13.0+-x64-linux.tar.gz
-tar -xvf ncbi-blast-2.13.0+-x64-linux.tar.gz
-~/bin/update_blastdb.pl --decompress nt
-perl ~/bin/update_blastdb.pl taxdb
-gunzip taxdb.tar.gz 
+conda install -c "bioconda/label/cf201901" raxml
+conda install -c "bioconda/label/cf201901" vsearch
+conda install -c "bioconda/label/cf201901" mafft
+conda install -c bioconda sina
 #add to profile
 export PATH="$PATH:/home/suzanne/bin"
-uses yml except for trimal (uses v1.2)
-conda install r-devtools
 ```
 Create conda enviroment for heatmap
-```sh
+```bash
 #heatmap
+conda deactivate
 conda create -n phyloseq_tree
+conda activate phyloseq_tree
 conda install r-devtools
 ```
 Open up R
@@ -42,7 +48,7 @@ install_github("microbiome/microbiome")
 ## 2.Backbone Tree Steps
 ### 2a. Make directory and get databases
 Should have 3 databases total: pr2, silva, and NCBI
-```sh
+```bash
 conda activate eukref
 #mkdir
 mkdir Korotnevella
@@ -70,7 +76,7 @@ cat ncbi_koro.fa silva_koro.fa pr2_koro.fa > all_koro.fa
 ```
 ### 2b. Remove unwanted genomes
 If you have created a tree and want to remove any outliers you can use this. Add unwanted genomes to remove.txt 
-```sh
+```bash
 mkdir remove
 nano remove.txt
 cd remove
@@ -82,13 +88,13 @@ cd ..
 ```
 ### 2c. Sort and Cluster Genomes using Vsearch
 You can either use the removed genomes here or keep going with no genomes filtered out.
-```sh
+```bash
 #sort by and cluster by 99%
 vsearch --sortbylength ./all_koro.fa --output all_koro.sort #when going back change ./all_koro.fa to ../remove/filt_acan.fa
 vsearch --cluster_fast all_koro.sort --centroids all_koro.clust --id 0.99
 ```
 ### 2d. Align using MAFFT
-```sh
+```bash
 #clean up headers
 sed 's/|.*//' all_koro.clust > temp
 mv temp all_koro.clust
@@ -96,7 +102,7 @@ mv temp all_koro.clust
 mafft --auto all_koro.clust > all_koro.align.fa
 ```
 ### 2e. Trim using Trimal
-```sh
+```bash
 #clean up for trimal
 sed '/^[^>]/s/n/-/g' all_koro.align.fa > temp
 mv temp all_koro.align.fa
@@ -105,7 +111,7 @@ mv temp all_koro.align.fa
 ```
 ### 2f. Backbone tree using RAxML
 If you do not like how reference tree looks you can either add the genomes you want to remove to remove.txt or trim it using the archaeopteryx tree viewer.
-```sh
+```bash
 #make backbone tree
 rm *ref.tre
 raxmlHPC-PTHREADS-SSE3 -T 7 -m GTRCAT -c 25 -e 0.001 -p 31514 -f a -N 100 -x 02938 -n koro_ref.tre -s all_koro.trim.fa
@@ -119,13 +125,13 @@ cd ..
 ## 3. Make tree with your ASVs
 ### 3a. Get your ASVs
 Use your taxonomy file to get their IDs and then pull their full fasta file
-```sh
+```bash
 awk '{print $1, $7}' ../18S-tax-renamed.txt | grep Korotnevella| awk '{print $1}' > koro.ids
 #pull their fasta file
 cat koro.ids | while read line; do grep -w $line ../ref-seq-18S.fasta -A 1; done > koro.fa
 ```
 ### 3b. Align your ASVs with referene genomes
-```sh
+```bash
 #allign sequences
 mkdir placement_tree
 cd placement_tree
@@ -134,12 +140,12 @@ sina -i ../all_koro.align.fa --prealigned -o all_koro.arb
 sina -i ../koro.fa -r all_koro.arb -o query.align.koro.fa --fs-msc 0.01 --fs-full-len=100
 ```
 ### 3c. Concat reference sequences with your ASVs
-```sh
+```bash
 #concat refrence sequences
 cat query.align.koro.fa ../all_koro.align.fa > queryPlus.align.koro.fa
 ```
 ### 3d. Create tree
-```sh
+```bash
 #create tree
 raxmlHPC-PTHREADS-SSE3 -f v -G 0.2 -m GTRCAT -n koro.all.tre -s queryPlus.align.koro.fa -t ../reference_trees/RAxML_bipartitions.koro_ref.tre -T 7
 #clean up tree
@@ -147,14 +153,14 @@ sed 's/QUERY___//g' RAxML_labelledTree.koro.all.tre | sed 's/\[I[0-9]*\]//g' > R
 ```
 ### 3e. Make constraint tree
 Constraint tree will be used for alignment for heatmap. Visualize the tree using Figtree
-```sh
+```bash
 #get constraint tree
 raxmlHPC-PTHREADS-SSE3 -f a -N 100 -G 0.2 -m GTRCAT -n koro.cons.tre -s queryPlus.align.koro.fa -g ../reference_trees/RAxML_bipartitions.koro_ref.tre -T 7 -x 25734 -p 25793
 #export for midpoint rooting
 RAxML_bipartitions.koro.cons.tre
 ```
 ### 3f. Annotations file
-```sh
+```bash
 #make complete annotation file
 awk '{print $1,$NF}' ../koro.ids | sed 's/ /\t/g' | sed 's/ASV/ASV /2' > my_koro_annots.txt
 cat ../reference_trees/annotations.koro.txt my_koro_annots.txt > all_koro_annotations.txt
@@ -162,7 +168,7 @@ cat ../reference_trees/annotations.koro.txt my_koro_annots.txt > all_koro_annota
 ## 4. Heatmap
 ### 4a. Getting files ready for R
 The goal is to make it into a phyloseq object that can be joined comptaible with our actual 18S rRNA dataset phyloseq object
-```sh
+```bash
 conda activate phyloseq_tree
 #this will be the taxonomy
 cp ../reference_trees/annotations.koro.txt ~/legionella/R/phyloseq_tree/korotnevella
