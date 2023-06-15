@@ -32,6 +32,7 @@ conda deactivate
 conda create -n phyloseq_tree
 conda activate phyloseq_tree
 conda install r-devtools
+conda install -c conda-forge r-ggpubr
 ```
 Open up R
 ```R
@@ -189,56 +190,95 @@ library(reshape2)
 library(ggplot2)
 library(ape)
 library(microbiome)
+library(ggpubr)
+library(rstatix)
 ```
-### 4c. Making phyloseq object
+### 4c. Making phyloseq object for your ASVs
 ```R
 #getting 18S ASVs
-seqtab_18S <- read.table("18S-ASV-renamed.txt", header=T)
-#getting refrence files
-seqtab_ref <- read.table("ref_ASV.txt", header=T)
-#combing the otu tables
-otu <- dplyr::full_join(seqtab_18S, seqtab_ref)
-row.names(otu) <- otu$OTU
-otu <- data.matrix(otu)
-otu[is.na(otu)] <- as.numeric(0)
-otutable <- otu_table(otu, taxa_are_rows=T)
-#getting taxa
-tax_other <- read.table("annotations.koro.txt", header=F, sep="\t")
-my_taxa <- read.table("18S-tax-renamed.txt", header=F, sep="\t")
-#combining taxa
-taxa <- dplyr::full_join(my_taxa, tax_other, by=c('V7'='V2', 'V1'='V1')) #how to join taxa
-taxa[is.na(taxa)] <- as.character("bleep") # this is to fill out the missing taxa
-row.names(taxa) <- taxa$V1
-taxa2 <- taxa[, c(2,7)]
-taxa_phylo <- tax_table(as.matrix(taxa2))
+#reading sequence tables
+seqtab_18S <- read.table("18S-ASV-renamed.txt", header=T, row.names=1)
+seqtab_18S_trans <- t(seqtab_18S)
+otu_18S <-otu_table(seqtab_18S_trans, taxa_are_rows=F)
+#taxa_names(otu_18S)
+#reading in taxonomy
+tax_18S <- read.table("18S-tax-renamed.txt", header=F, row.names=1, sep="\t")
+tax_18S_phylo <- tax_table(as.matrix(tax_18S))
+#taxa_names(tax_18S_phylo)
 #reeading in metadata
-map_18S <- read.table("metadata_unsure_18S_R.txt", sep="\t", header=T, row.names=1)
+map_18S <- read.table("metadata_18S.txt", sep="\t", header=T, row.names=1)
 map_map_18S <- sample_data(map_18S)
-#read in tree that was saved from figtree with the order you want your nodes in
-tre <- read.tree("korotnevella.tre")
-#combine object
-physeq <- merge_phyloseq(otutable,map_map_18S, tre,taxa_phylo)
+#physeq_16S_filter1 = subset_taxa(physeq_16S, V5=="Legionellales")
+physeq_18S <- merge_phyloseq(otu_18S, map_map_18S, tax_18S_phylo)
 ```
-### 4d. Get data ready for heatmap
+### 4d. Filtering your ASVs 
 ```R
-ps18 <- merge_samples(physeq, "month") #combine by month
-rel.abund.18S <- transform_sample_counts(ps18, function(x) x/sum(x)) #transform data into relative abundance
-data_18S <- psmelt(rel.abund.18S)
-data_18S_2 <- data_18S[, c(1,2,3)]
-data_18S_3 <- as.matrix(data_18S_2)
+physeq_18S_clr_filter = subset_taxa(physeq_18S, V7=="Korotnevella") #getting just specific genus of interest
+ps1 <- merge_samples(physeq_18S, "month") #combine by month
+physeq_18S_clr <- microbiome::transform(ps1, "clr") #converting abundance to CLR
 ```
-### 4e. Get the tip order
+### 4e. Getting your ASVs into a data frame
 ```R
-month_order=c("march","april","may","june", "july","august")
-tip_order <- rev(tre$tip.label)
-tip_order2 <- gsub("'","",tip_order) #needed to remove '
+data_18S <- psmelt(physeq_18S_clr_filter) #getting ASVs in datafrane
+data_18S_2 <- data_18S[, c(1,2,3)] # selecting only columns of interest
 ```
-### 4f. Make heatmap
-I did the log of relative abundance since the changes were so small
+### 4f. Reading in tree
 ```R
-pdf("korotnevella_asv_heatmap.pdf")
-ggplot(data_18S_2, aes(x=factor(Sample, levels=month_order),y=factor(OTU, levels=tip_order2))) +
-  geom_tile((aes(fill = log(Abundance))))+
+tre <- read.tree("koro_77.tre")
+```
+### 4g. Get genome frequency table ready for phyloseq
+```R
+#reference otu table
+seqtab_18S_1 <- read.table("18S-ASV-renamed.txt", header=T) # your ASV frequency table
+seqtab_ref <- read.table("ref_ASV.txt", header=T) #reference genomes
+#combing the otu tables
+otu <- dplyr::full_join(seqtab_18S_1, seqtab_ref) #join reference and ASV frequency together (to get the same number of samples)
+row.names(otu) <- otu$OTU
+otu <- otu[,-1] # remove first row since it is a repeat of the row names now
+otu <- data.matrix(otu) #convert to matrix
+otu[is.na(otu)] <- as.numeric(0) #convert NAs to 0
+otu_df <- as.data.frame(otu) #convert back into a dataframe
+otu_df <- cbind(rownames(otu_df), data.frame(otu_df, row.names=NULL)) #make the rownames into the first column
+colnames(otu_df)[1] <- "OTU" #rename the row names
+filter_ref <- otu_df %>% 
+  filter(!grepl('ASV', OTU)) #filter out all rows that start with ASV in first column
+row.names(filter_ref) <- filter_ref$OTU #make first column into row names
+filter_ref <- filter_ref[,-1] # remove first column
+filter_ref <- data.matrix(filter_ref) #convert into matrix
+otu_ref <-otu_table(filter_ref, taxa_are_rows=T) #make into phyloseq object
+```
+### 4h. Get other reference genome information into phyloseq object and merge
+```R
+#ref taxa
+tax_other <- read.table("annotations.koro.txt", header=F, row.names=1, sep="\t")
+tax_other_phylo <- tax_table(as.matrix(tax_other))
+#metadata has already been read in
+#combine ref data
+physeq_ref <- merge_phyloseq(otu_ref,map_map_18S,tax_other_phylo,tre) #must have the tree added here or else funny NA thing happens in heatmap
+physeq_ref_month <- merge_samples(physeq_ref, "month") #combine by month
+```
+### 4i. Get genome frequency into dataframe
+```R
+#getting ref genomes in df
+data_ref <- psmelt(physeq_ref_month) #getting ref genomes into dataframe
+data_ref_2 <- data_ref[, c(1,2,3)] #getting only important columns
+data_ref_2[data_ref_2 == 0] <- NaN #replace 0 with NA
+```
+### 4j. Combine ref and ASV dataframes together
+```R
+all_genomes <- dplyr::full_join(data_18S_2, data_ref_2)
+```
+### 4k. Getting orders for plot
+```R
+month_order=c("march","april","may","june", "july","august") #month order
+tip_order <- rev(tre$tip.label) #tip order
+tip_order2 <- gsub("'","",tip_order) #cleaning up tip names
+```
+### 4l. Plot heatmap
+```R
+pdf("korotnevella_asv_heatmap_clr.pdf")
+ggplot(all_genomes, aes(x=factor(Sample, levels=month_order),y=factor(OTU, levels=tip_order2))) +
+  geom_tile((aes(fill = Abundance)))+
   scale_fill_gradient(low = "#FFC300", high = "#900C3F") +
   coord_fixed() +
   theme_classic() +
@@ -248,9 +288,31 @@ ggplot(data_18S_2, aes(x=factor(Sample, levels=month_order),y=factor(OTU, levels
         legend.title = element_text(size = 6), legend.key.size = unit(3, 'mm'), legend.text = element_text(size = 4)) 
 dev.off()
 ```
-## 5. Combine tree and heatmap
+## 5. Month Boxplots
+### 5a. Getting object ready for boxplot
+```R
+physeq_18S_bp_clr <- microbiome::transform(physeq_18S, "clr") #clr transformation
+glom_bp <- tax_glom(physeq_18S_bp_clr, taxrank=rank_names(physeq_18S_bp_clr)[6]) #collapse by genus level
+physeq_18S_clr_filter_bp = subset_taxa(glom_bp, V7=="Korotnevella") #get only genus of interest
+```
+### 5b. Converting phyloseq object into boxplot
+```R
+data_18S_bp <- psmelt(physeq_18S_clr_filter_bp) #getting object into dataframe
+data_pb_2 <- data_18S_bp[, c(2,6,3)] #getting only columns of interest
+```
+### 5c. Plot boxplot
+```R
+pdf("koro_asv_boxplot_clr.pdf")
+ggplot(data_pb_2, aes(x=factor(month, levels=month_order),y=Abundance))+
+  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "none") + #adds wilcoxen test and only bars for signficant difference
+  geom_boxplot() +
+  geom_jitter(shape=16, position=position_jitter(0.2), size=1)+
+  labs(x ="Month", y = "CLR Abundance")+
+  theme_classic()
+dev.off()
+```
+## 6. Combine tree and heatmap and boxplots
 Use some photo editing software to align the tree and heatmap
-
 
 
 
