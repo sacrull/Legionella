@@ -19,37 +19,37 @@ cd ~/legionella/16S/data
 #manifest files header sample-id forward-absolute-path reverse-absolute-path
 qiime tools import \
   --type 'SampleData[PairedEndSequencesWithQuality]' \
-  --input-path ./manfist.txt \
-  --output-path ./paired-end-demux.qza \
+  --input-path ./manifest_16S_R.txt \
+  --output-path ./paired-end-demux-16S-R.qza \
   --input-format PairedEndFastqManifestPhred33V2
 
 cp paired-end-demux.qza ~/legionella/16S
 
 qiime demux summarize \
-  --i-data ./paired-end-demux.qza \
-  --o-visualization ./paired-end-demux-sum-viz.qzv
+  --i-data ./paired-end-demux-16S-R.qza \
+  --o-visualization ./paired-end-demux-16S-R-vis.qza
 
 #no cutadapt there is no primer
 
 #denoise data
 qiime dada2 denoise-paired \
---i-demultiplexed-seqs paired-end-demux.qza \
+--i-demultiplexed-seqs paired-end-demux-16S-R.qza \
 --p-trunc-len-f 240 \
 --p-trunc-len-r 175 \
 --p-n-threads 4 \
---o-representative-sequences representative-sequences.qza \
---o-table feature-table-0.qza \
---o-denoising-stats dada2-stats.qza
+--o-representative-sequences representative-sequences-16S-R.qza \
+--o-table feature-table-16S-R.qza \
+--o-denoising-stats dada2-stats-16S-R.qza
 
 qiime metadata tabulate \
-  --m-input-file dada2-stats.qza \
-  --o-visualization dada2-stats-summ.qzv
+  --m-input-file dada2-stats-16S-R.qza \
+  --o-visualization dada2-stats-16S-summ.qzv
 qiime feature-table summarize \
-  --i-table feature-table-0.qza \
-  --m-sample-metadata-file metadata_unsure_16S.txt \
-  --o-visualization feature-table-0-summ.qzv
+  --i-table feature-table-16S-R.qza \
+  --m-sample-metadata-file metadata_unsure_16S-R.txt \
+  --o-visualization feature-table-16S-R-summ.qzv
 qiime feature-table tabulate-seqs \
-  --i-data representative-sequences.qza \
+  --i-data representative-sequences-R.qza \
   --o-visualization representative-sequences-summ.qzv
 
 biom convert -i feature-table.biom -o feature-table.txt --to-tsv
@@ -80,10 +80,36 @@ qiime feature-classifier fit-classifier-naive-bayes \
 	actual classification
 qiime feature-classifier classify-sklearn \
   --i-classifier classifier_EZ_V3V4-test1.qza \
-  --i-reads representative-sequences.qza \
+  --i-reads representative-sequences-R.qza \
   --p-n-jobs 4 \
-  --o-classification taxonomy-test1.qza
+  --o-classification taxonomy-test-16S-R.qza
 
 qiime metadata tabulate \
-  --m-input-file taxonomy-test1.qza \
-  --o-visualization taxonomy-test1.qzv
+  --m-input-file axonomy-test-16S-R.qza \
+  --o-visualization taxonomy-test-R-vis.qzv
+
+
+#taxonomy filter and rel abudance barchart
+qiime taxa filter-table \
+  --i-table ../data/feature-table-16S-R.qza \
+  --i-taxonomy ../ezbio/taxonomy-test-16S-R.qza \
+  --p-mode contains \
+  --p-include "Bacteria;" \
+  --o-filtered-table filtered-table-16S-R.qza
+
+
+qiime feature-table filter-seqs \
+  --i-data ../data/representative-sequences-16S-R.qza \
+  --i-table filtered-table-16S-R.qza \
+  --o-filtered-data filtered-sequences-16S-R.qza
+
+
+qiime taxa barplot \
+  --i-table ./filtered-table-16S-R.qza \
+  --i-taxonomy ../ezbio/taxonomy-test-16S-R.qza \
+  --m-metadata-file ../data/metadata_unsure_16S_R.txt \
+  --o-visualization taxa-bar-plots-16S-filt-R.qzv 
+
+
+
+

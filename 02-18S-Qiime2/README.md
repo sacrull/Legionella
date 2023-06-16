@@ -2,26 +2,26 @@
 ## 1. Renaming Fastq Files
 Move to your directory with your reads. I am renaming my files since I want more informative names. 
 ### R1 Reads
-```
+```bash
 ls *_R1_*.fastq | sort -n > num_order_R1_18S.txt
 paste -d"\t" num_order_R1_18S.txt new_name_R1_18S.txt > name_R1_map_18S.txt
 awk -F'/t' 'system("cp " $1 " " $2)' name_R1_map_18S.txt
 ```
 ### R2 Reads
-```
+```bash
 ls *_R2_*.fastq | sort -n > num_order_R2_18S.txt
 paste -d"\t" num_order_R2_18S.txt new_name_R2_18S.txt > name_R2_map_18S.txt
 awk -F'/t' 'system("cp " $1 " " $2)' name_R2_map_18S.txt
 ```
 ## 2. Moving files
 Move renamed fastq files into new directory
-```
+```bash
 mv ./[mja]* ~/legionella/18S/data
 gzip *.fastq
 ```
 ## 3. Create Conda Enviroment
 Use `qiime --help` to make sure Qiime2 is properly installed
-```
+```bash
 wget https://data.qiime2.org/distro/core/qiime2-2023.2-py38-linux-conda.yml
 conda env create -n qiime2-2023.2 --file qiime2-2023.2-py38-linux-conda.yml
 conda activate qiime2-2023.2
@@ -29,7 +29,7 @@ qiime --help
 rm qiime2-2023.2-py38-linux-conda.yml
 ```
 ## 4. Make Qiime2 Artifact 
-```
+```bash
 qiime tools import \
   --type 'SampleData[PairedEndSequencesWithQuality]' \
   --input-path ./manfist_18S.txt \
@@ -44,7 +44,7 @@ qiime demux summarize \
 ```
 ## 5. Denoise
 ### Make denoise directory
-```
+```bash
 cd ~/legionella/18S
 mkdir denoise
 cp paired-end-demux-18S.qza ./denoise
@@ -52,7 +52,7 @@ cd denoise
 ```
 ### Cutadapt
 I had to remove the reverse compilment of primers since there was a lot of variety in my sequence read length
-```
+```bash
 qiime cutadapt trim-paired \
     --i-demultiplexed-sequences paired-end-demux-18S.qza \
     --p-adapter-f AAAGGAATTGACGGARGGRCACC \
@@ -63,14 +63,14 @@ qiime cutadapt trim-paired \
     --o-trimmed-sequences primer-trimmed.qza
 ```
 Visualize and check reads again
-```
+```bash
 qiime demux summarize \
   --i-data ./primer-trimmed.qza \
   --o-visualization ./primer-trimmed-18S.qzv
 ```
-### DADA2
-No trimming was done because of the variable sequence length
-```
+### Denoising
+No trimming was done because of the variable sequence length.
+```bash
 qiime dada2 denoise-paired \
 --i-demultiplexed-seqs primer-trimmed.qza \
 --p-trunc-len-f 0 \
@@ -81,7 +81,7 @@ qiime dada2 denoise-paired \
 --o-denoising-stats dada2-stats-18S.qza
 ```
 Visualize to make sure results look as expected and move representative-sequences-18S.qza into main 18S directory
-```
+```bash
 qiime metadata tabulate \
   --m-input-file dada2-stats-18S.qza \
   --o-visualization dada2-stats-summ-18S.qzv
@@ -98,7 +98,7 @@ Silva was used for 18S sequences
 
 ### Make silva directory
 Get all files that will be needed into that directory
-```
+```bash
 cd ~/legionella/18S
 mkdir silva
 cp representative-sequences-18S.qza /home/suzanne/legionella/18S/silva
@@ -106,7 +106,7 @@ wget https://data.qiime2.org/2023.2/common/silva-138-99-seqs.qza
 wget https://data.qiime2.org/2023.2/common/silva-138-99-tax.qza
 ```
 ### Train classifier
-```
+```bash
 qiime feature-classifier extract-reads \
     --i-sequences silva-138-99-seqs.qza \
     --p-f-primer AGAYGATYAGATACCGTCGTAG \
@@ -119,7 +119,7 @@ qiime feature-classifier fit-classifier-naive-bayes \
  --o-classifier classifier_SILVA-test1.qza
 ```
 ### Assign taxonomy
-```
+```bash
 qiime feature-classifier classify-sklearn \
   --i-classifier classifier_SILVA.qza \
   --i-reads representative-sequences-18S.qza \
@@ -129,7 +129,7 @@ qiime feature-classifier classify-sklearn \
 
 ## 7. Filter taxonomy
 Remove anything not assigned at phylum level or is assigned as mitochondrial
-```
+```bash
 qiime taxa filter-table \
   --i-table feature-table-18S.qza \
   --i-taxonomy taxonomy-test2.qza \
