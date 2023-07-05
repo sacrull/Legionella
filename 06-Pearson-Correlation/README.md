@@ -1,19 +1,19 @@
-# Spearman Correlation
+# Pearson Correlation
 ## 1. Make a New Directory and Copy Files
-Make a new directory for spearman correlation
+Make a new directory for pearson correlation
 ```bash
 cd ~/legionella/R/
-mkdir spearman
+mkdir pearson
 ```
 Copy your metadata, frequency table, and taxonomy files for the 16S and 18S data into the new directory
 ```bash
-cp *.txt ./spearman
+cp *.txt ./pearson
 ```
 ## 2. Install the packages
 Create a conda enviroment and open up R
 ```bash
-conda create -n spearman
-conda activate spearman
+conda create -n pearson
+conda activate pearson
 conda install -c conda-forge r-base
 conda install r-sf
 conda config --add channels conda-forge
@@ -105,10 +105,10 @@ list_all<-as.list(orderdf)
 ordered_list <- unique(sort(list_all$V7))
 ordered_list2 <- c("Legionella", ordered_list)
 ```
-## 7. Spearman Correlation
+## 7. pearson Correlation
 Running the correlation from the matrix
 ```R
-ASV_spear_corr1 <- rcorr(ASV_freq,type=c("spearman"))
+ASV_spear_corr1 <- rcorr(ASV_freq,type=c("pearson"))
 ```
 Creating a function for the next step
 ```R
