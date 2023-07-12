@@ -11,20 +11,20 @@ library(ggplot2)
 ## 2. Get 18S data into phyloseq
 ### Frequency table
 ```R
-seqtab_18S <- read.table("18S-ASV-renamed.txt", header=T, row.names=1)
+seqtab_18S <- read.table("../18S-ASV-renamed.txt", header=T, row.names=1)
 seqtab_18S_trans <- t(seqtab_18S)
 otu_18S <-otu_table(seqtab_18S_trans, taxa_are_rows=F)
 #taxa_names(otu_18S)
 ```
 ### Taxonomy
 ```R
-tax_18S <- read.table("18S-tax-renamed.txt", header=F, row.names=1, sep="\t")
+tax_18S <- read.table("../18S-tax-renamed.txt", header=F, row.names=1, sep="\t")
 tax_18S_phylo <- tax_table(as.matrix(tax_18S))
 #taxa_names(tax_18S_phylo)
 ```
 ### Metadata
 ```R
-map_18S <- read.table("metadata_unsure_18S_R.txt", sep="\t", header=T, row.names=1)
+map_18S <- read.table("../metadata_unsure_18S_R.txt", sep="\t", header=T, row.names=1)
 map_map_18S <- sample_data(map_18S)
 ```
 ### Merging 18S object and Filtering
@@ -72,18 +72,18 @@ rel_18S <- data[,c(2,3,42)]
 ## 8. Getting 16S Phyloseq Object
 ### Frequency Table
 ```R
-seqtab_16S <- read.table("feature-table-16S.txt", header=T, row.names=1)
+seqtab_16S <- read.table("../feature-table-16S.txt", header=T, row.names=1)
 seqtab_16S_trans <- t(seqtab_16S)
 otu_16S <-otu_table(seqtab_16S_trans, taxa_are_rows=F)
 ```
 ### Taxonomy
 ```R
-tax_16S <- read.table("taxonomy_16S.txt", header=F, row.names=1, sep="\t")
+tax_16S <- read.table("../taxonomy_16S.txt", header=F, row.names=1, sep="\t")
 tax_16S_phylo <- tax_table(as.matrix(tax_16S))
 ```
 ### Metadata
 ```R
-map_16S <- read.table("metadata_16S.txt", sep="\t", header=T, row.names=1)
+map_16S <- read.table("../metadata_16S.txt", sep="\t", header=T, row.names=1)
 map_map_16S <- sample_data(map_16S)
 ```
 ### Merging 16S Objet
@@ -129,8 +129,7 @@ combined_leg_18S <- left_join(rel_18S, leg_rel, by = join_by(Sample == Sample))
 ## 12. Graph
 ### Colors for gtraph
 ```R
-leg_pred_host_diff=c("Legionella"="plum3","Acanthamoeba" = "#D53E4F", "Echinamoebida"="#FDAE61", "Korotnevella" ="#FEE08B", "Naegleria"="#E6F598", "Tetrahymena"="#ABDDA4", "Vannella" = "#66C2A5","Vermamoeba"="#3288BD", 
-      "Arcellinida_unknown" = "gray52", "BIO10-D10" = "gray52", "Dactylopodida" = "gray52", "Stygamoebida" = "gray52", "Euamoebida" = "gray52", "BOLA868" = "gray52", "Centramoebida" = "gray52", "Mycamoeba" = "gray52", "Vannella" = "gray52", "Euamoebida_unknown" = "gray52", "Vannellida" = "gray52", "Tubulinea_unknown" = "gray52", "Tubulinea" = "gray52", "uncultured" = "gray52", "Vannellida_unknown" = "gray52", "Amoebozoa_unknown" = "gray52", "Cryptodifflugia" = "gray52", "Amoebozoa" = "gray52", "Vermistella" = "gray52", "Protosteliopsis" = "gray52", "Arcellinida" = "gray52", "Arcella" = "gray52", "Gymnophrys" = "gray67", "Heteromita" = "gray67", "Cercozoa_unknown" = "gray67", "uncultured" = "gray67", "Paracercomonas" = "gray67", "Cercozoa" = "gray67", "Glissomonadida_unknown" = "gray67", "Vampyrellidae" = "gray67", "Tracheleuglypha" = "gray67", "Cercomonadidae" = "gray67", "Eocercomonas" = "gray67", "Kraken" = "gray67", "Euglypha" = "gray67", "Glissomonadida" = "gray67", "Trinema" = "gray67", "Thecofilosea_unknown" = "gray67", "Chilodonella" = "gray52", "Amphileptus" = "gray52", "Cyrtolophosis" = "gray52", "Leptopharynx" = "gray52", "Hymenostomatia" = "gray52", "Cyclidium" = "gray52", "Colpodea_unknown" = "gray52", "Hypotrichia_unknown" = "gray52", "Vorticella" = "gray52", "Protocyclidium" = "gray52", "Peritrichia" = "gray52", "Spirotrichea_unknown" = "gray52", "Oligohymenophorea" = "gray52", "Conthreep_unknown" = "gray52", "Nassophorea" = "gray52", "Colpodida" = "gray52", "Telotrochidium" = "gray52", "Nassophorea_unknown" = "gray52", "Oligohymenophorea_unknown" = "gray52", "Aspidisca" = "gray52", "Haptoria_unknown" = "gray52", "Ephelota" = "gray52", "Cyrtolophosidida" = "gray52", "Allovahlkampfia" = "gray52", "Tetramitia_unknown" = "gray52", "Vahlkampfia" = "gray52", "Neovahlkampfia" = "gray52", "Cercomonadidae_unknown" = "gray67", "Euglyphida_unknown" = "gray67", "Hypotrichia_unknown" = "gray52", "Oligohymenphorea_unknown"="gray52", "Oligohymenophorea_unkown"="gray52", "Vampyrellidae_unknown"="gray67")
+leg_pred_host_diff=c("Legionella"="plum3","Acanthamoeba" = "#D53E4F", "Echinamoeba"="#FDAE61", "Korotnevella" ="#FEE08B", "Naegleria"="#E6F598", "Tetrahymena"="#ABDDA4", "Vannella" = "#66C2A5","Vermamoeba"="#3288BD", "Arcellinida_unknown" = "gray52", "BIO10-D10" = "gray52", "Dactylopodida" = "gray52", "Stygamoebida" = "gray52", "Euamoebida" = "gray52", "BOLA868" = "gray52", "Centramoebida" = "gray52", "Mycamoeba" = "gray52", "Vannella" = "gray52", "Euamoebida_unknown" = "gray52", "Vannellida" = "gray52", "Tubulinea_unknown" = "gray52", "Tubulinea" = "gray52", "uncultured" = "gray52", "Vannellida_unknown" = "gray52", "Amoebozoa_unknown" = "gray52", "Cryptodifflugia" = "gray52", "Amoebozoa" = "gray52", "Vermistella" = "gray52", "Protosteliopsis" = "gray52", "Arcellinida" = "gray52", "Arcella" = "gray52", "Gymnophrys" = "gray67", "Heteromita" = "gray67", "Cercozoa_unknown" = "gray67", "uncultured" = "gray67", "Paracercomonas" = "gray67", "Cercozoa" = "gray67", "Glissomonadida_unknown" = "gray67", "Vampyrellidae" = "gray67", "Tracheleuglypha" = "gray67", "Cercomonadidae" = "gray67", "Eocercomonas" = "gray67", "Kraken" = "gray67", "Euglypha" = "gray67", "Glissomonadida" = "gray67", "Trinema" = "gray67", "Thecofilosea_unknown" = "gray67", "Chilodonella" = "gray52", "Amphileptus" = "gray52", "Cyrtolophosis" = "gray52", "Leptopharynx" = "gray52", "Hymenostomatia" = "gray52", "Cyclidium" = "gray52", "Colpodea_unknown" = "gray52", "Hypotrichia_unknown" = "gray52", "Vorticella" = "gray52", "Protocyclidium" = "gray52", "Peritrichia" = "gray52", "Spirotrichea_unknown" = "gray52", "Oligohymenophorea" = "gray52", "Conthreep_unknown" = "gray52", "Nassophorea" = "gray52", "Colpodida" = "gray52", "Telotrochidium" = "gray52", "Nassophorea_unknown" = "gray52", "Oligohymenophorea_unknown" = "gray52", "Aspidisca" = "gray52", "Haptoria_unknown" = "gray52", "Ephelota" = "gray52", "Cyrtolophosidida" = "gray52", "Allovahlkampfia" = "gray52", "Tetramitia_unknown" = "gray52", "Vahlkampfia" = "gray52", "Neovahlkampfia" = "gray52", "Cercomonadidae_unknown" = "gray67", "Euglyphida_unknown" = "gray67", "Hypotrichia_unknown" = "gray52", "Oligohymenphorea_unknown"="gray52", "Oligohymenophorea_unkown"="gray52", "Vampyrellidae_unknown"="gray67")
 ```
 ### Graphinh
 ```R

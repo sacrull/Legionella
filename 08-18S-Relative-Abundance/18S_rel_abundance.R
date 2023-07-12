@@ -12,18 +12,18 @@ library(ggplot2)
 
 setwd("/home/suzanne/legionella/R/rel_abundance")
 #reading sequence tables
-seqtab_18S <- read.table("18S-ASV-renamed.txt", header=T, row.names=1)
+seqtab_18S <- read.table("../18S-ASV-renamed.txt", header=T, row.names=1)
 seqtab_18S_trans <- t(seqtab_18S)
 otu_18S <-otu_table(seqtab_18S_trans, taxa_are_rows=F)
 #taxa_names(otu_18S)
 
 #reading in taxonomy
-tax_18S <- read.table("18S-tax-renamed.txt", header=F, row.names=1, sep="\t")
+tax_18S <- read.table("../18S-tax-renamed.txt", header=F, row.names=1, sep="\t")
 tax_18S_phylo <- tax_table(as.matrix(tax_18S))
 #taxa_names(tax_18S_phylo)
 
 #reeading in metadata
-map_18S <- read.table("metadata_unsure_18S_R.txt", sep="\t", header=T, row.names=1)
+map_18S <- read.table("../metadata_unsure_18S_R.txt", sep="\t", header=T, row.names=1)
 map_map_18S <- sample_data(map_18S)
 
 physeq_18S <- merge_phyloseq(otu_18S, map_map_18S, tax_18S_phylo)
@@ -53,9 +53,10 @@ sum(data[data$Sample == 'april',]$Abundance)
 pdf("18S_rel_abudance_month.pdf", width=30, height=18)
 ggplot(rel_18S)  + 
   geom_bar(aes(x=Sample, y=Abundance,fill=V3),stat="identity", position="stack")+
-  #scale_fill_manual(values = leg_pred_host_diff)+ #"Vahlkampfia" = "#66C2A5" is a maybe
+  theme_minimal() +
   scale_x_discrete(limits = c("march", "april", "may", "june", "july","august"))+
-  scale_y_continuous(sec.axis = sec_axis(~./1000)) + theme_minimal()
+  labs(fill='Phylum') +
+  theme(axis.text = element_text(size = 23), axis.title = element_text(size = 30),legend.text = element_text(size = 25),legend.title = element_text(size = 30))
 dev.off()
 
 
@@ -83,10 +84,10 @@ sample_order <- c("mar15_W_38", "mar24_E_46", "mar24_W_47", "mar24_H2O_48", "mar
 pdf("18S_rel_abudance_all.pdf", width=30, height=18)
 ggplot(rel_18S_all)  + 
   geom_bar(aes(x=Sample, y=Abundance,fill=V3),stat="identity", position="stack")+
-  #scale_fill_manual(values = leg_pred_host_diff)+ #"Vahlkampfia" = "#66C2A5" is a maybe
-  scale_x_discrete(limits = sample_order)+
-  scale_y_continuous(sec.axis = sec_axis(~./1000)) + theme_minimal() +
-  theme(axis.text.x=element_text(size=4))
+  theme_minimal() +
+  scale_x_discrete(limits = sample_order,guide = guide_axis(angle = 90))+
+  labs(fill='Phylum') +
+  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 20),legend.text = element_text(size = 18),legend.title = element_text(size = 20))
 dev.off()
 
 
