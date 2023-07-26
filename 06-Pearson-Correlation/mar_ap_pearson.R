@@ -97,7 +97,7 @@ ordered_list2 <- c("Legionella", ordered_list)
 	#renamed_ASV_freq5 <- t(as.matrix(renamed_ASV_freq4))
 
 #running correlation
-ASV_spear_corr1 <- rcorr(ASV_freq,type=c("pearson"))
+ASV_pear_corr1 <- rcorr(ASV_freq,type=c("pearson"))
 flattenCorrMatrix <- function(cormat, pmat) {
   ut <- upper.tri(cormat)
   data.frame(
@@ -107,36 +107,36 @@ flattenCorrMatrix <- function(cormat, pmat) {
     p = pmat[ut]
     )
 }
-flatten_ASV_spear1 <- flattenCorrMatrix(ASV_spear_corr1$r, ASV_spear_corr1$P)
+flatten_ASV_pear1 <- flattenCorrMatrix(ASV_pear_corr1$r, ASV_pear_corr1$P)
 
 #renaming to genus level
-flatten_ASV_spear2 <- left_join(flatten_ASV_spear1, orderdf, by=c('row'='ASV'))
-colnames(flatten_ASV_spear2)[5] <- "origin"
-flatten_ASV_spear3 <- left_join(flatten_ASV_spear2, orderdf, by=c('column'='ASV'))
-colnames(flatten_ASV_spear3)[6] <- "destination"
-flatten_ASV_spear4 <- flatten_ASV_spear3[, c(5,6,3,4)]
-colnames(flatten_ASV_spear4)[3] <- "value"
+flatten_ASV_pear2 <- left_join(flatten_ASV_pear1, orderdf, by=c('row'='ASV'))
+colnames(flatten_ASV_pear2)[5] <- "origin"
+flatten_ASV_pear3 <- left_join(flatten_ASV_pear2, orderdf, by=c('column'='ASV'))
+colnames(flatten_ASV_pear3)[6] <- "destination"
+flatten_ASV_pear4 <- flatten_ASV_pear3[, c(5,6,3,4)]
+colnames(flatten_ASV_pear4)[3] <- "value"
 
-flatten_ASV_spear4 = flatten_ASV_spear4[order(flatten_ASV_spear4$p),]
-#headtail(flatten_ASV_spear4)
+flatten_ASV_pear4 = flatten_ASV_pear4[order(flatten_ASV_pear4$p),]
+#headtail(flatten_ASV_pear4)
 
 
-flatten_ASV_spear4$BH =
-      p.adjust(flatten_ASV_spear4$p,
+flatten_ASV_pear4$BH =
+      p.adjust(flatten_ASV_pear4$p,
                method = "BH")
 
 ##sanity check
-	#flatten_ASV_spear4[flatten_ASV_spear4$destination == "Vannella", ]
+	#flatten_ASV_pear4[flatten_ASV_pear4$destination == "Vannella", ]
 
 #false discovery rate 
 
-flatten_ASV_spear5 <- flatten_ASV_spear4[, c(1,2,3,5)]
-filter1_BH_spear <- subset(flatten_ASV_spear5, BH < .05) 
-filter2_BH_spear <- filter1_BH_spear[, c(1:3)]
+flatten_ASV_pear5 <- flatten_ASV_pear4[, c(1,2,3,5)]
+filter1_BH_pear <- subset(flatten_ASV_pear5, BH < .05) 
+filter2_BH_pear <- filter1_BH_pear[, c(1:3)]
 
 
 pdf("BH_mar_ap_pear_ordered_clean.pdf", height=14, width= 14)
-chordDiagram(filter2_BH_spear, order = ordered_list2, transparency = 0.5, grid.col = leg_pred_host_diff, col = ifelse(filter2_BH_spear$origin == "Legionella", ifelse(filter2_BH_spear$value > 0, ifelse(filter2_BH_spear$value > 0.7, "#0487fb", ifelse(filter2_BH_spear$value > 0.5, "#04F0FB", "#04FB38")), "red") , "gray"),
+chordDiagram(filter2_BH_pear, order = ordered_list2, transparency = 0.5, grid.col = leg_pred_host_diff, col = ifelse(filter2_BH_pear$origin == "Legionella", ifelse(filter2_BH_pear$value > 0, ifelse(filter2_BH_pear$value > 0.7, "#0487fb", ifelse(filter2_BH_pear$value > 0.5, "#04F0FB", "#04FB38")), "red") , "gray"),
 	annotationTrack = "grid", preAllocateTracks = list(track.height = 0.1))
 
 circos.trackPlotRegion(track.index = 1, panel.fun = function(x, y) {
