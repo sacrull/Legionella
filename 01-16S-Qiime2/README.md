@@ -61,13 +61,25 @@ mkdir denoise
 cp paired-end-demux.qza ./denoise
 cp metadata_16S.txt ./denoise
 ```
+###Cutadapt
+```bash
+qiime cutadapt trim-paired \
+  --i-demultiplexed-sequences ../data/paired-end-demux-16S-R.qza \
+  --p-front-f GTGCCAGCMGCCGCGGTAA \
+  --p-front-r GGACTACHVGGGTWTCTAAT \
+  --p-cores 7 \
+  --p-match-adapter-wildcards \
+  --p-match-read-wildcards \
+  --o-trimmed-sequences primer-trimmed-16S.qza \
+  --verbose
+``` 
 ### Denoise data
 ```bash
 qiime dada2 denoise-paired \
---i-demultiplexed-seqs paired-end-demux.qza \
+--i-demultiplexed-seqs primer-trimmed-16S.qza \
 --p-trunc-len-f 240 \
 --p-trunc-len-r 175 \
---p-n-threads 4 \
+--p-n-threads 7 \
 --o-representative-sequences representative-sequences-16S.qza \
 --o-table feature-table-16S.qza \
 --o-denoising-stats dada2-stats-16S.qza
@@ -79,7 +91,7 @@ qiime metadata tabulate \
   --o-visualization dada2-stats-16S-summ.qzv
 qiime feature-table summarize \
   --i-table feature-table-16S.qza \
-  --m-sample-metadata-file metadata_16S.txt \
+  --m-sample-metadata-file ../data/metadata_unsure_16S_R.txt \
   --o-visualization feature-table-16S-summ.qzv
 qiime feature-table tabulate-seqs \
   --i-data representative-sequences-16S.qza \
@@ -92,10 +104,6 @@ Request the database from their [website](https://www.ezbiocloud.net/resources/1
 Upload the files into your directory
 ### Get all the files you will need into ./ezbio
 Make sure you have the files from ezbio cloud
-Get your files
-```bash
-cp ./representative-sequences-16S.qza ~/legionella/16S/ezbio/
-```
 ### Get files into Qiime2
 ```bash
 qiime tools import \
@@ -120,28 +128,28 @@ qiime feature-classifier extract-reads \
 
 qiime feature-classifier fit-classifier-naive-bayes \
  --i-reference-reads ref-seqs_EZ_V3V4.qza \
- --i-reference-taxonomy ref-taxonomy-test1.qza \
- --o-classifier classifier_EZ_V3V4-test1.qza
+ --i-reference-taxonomy ref-taxonomy.qza \
+ --o-classifier classifier_EZ_V3V4.qza
 ```
 ### Assign taxonomy
 ```bash
 qiime feature-classifier classify-sklearn \
   --i-classifier classifier_EZ_V3V4-test1.qza \
-  --i-reads representative-sequences.qza \
-  --p-n-jobs 4 \
+  --i-reads ../denoise/representative-sequences-16S.qza \
+  --p-n-jobs 7 \
   --o-classification taxonomy-16S.qza
 ```
 Visualize in order to check taxonomy
 ```bash
 qiime metadata tabulate \
-  --m-input-file taxonomy-test1.qza \
+  --m-input-file taxonomy-16S.qza \
   --o-visualization taxonomy-16S.qzv
 ```
 ## 7. Filter taxonomy
 Only keep what was assigned to bacteria
 ```bash
 qiime taxa filter-table \
-  --i-table feature-table-0.qza \
+  --i-table feature-table-16S.qza \
   --i-taxonomy taxonomy-test1.qza \
   --p-mode contains \
   --p-include "Bacteria;" \

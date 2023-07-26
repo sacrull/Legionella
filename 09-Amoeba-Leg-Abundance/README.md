@@ -139,7 +139,7 @@ ggplot(combined_leg_18S)  +
   scale_fill_manual(values = leg_pred_host_diff)+ #"Vahlkampfia" = "#66C2A5" is a maybe
   geom_line(aes(x=Sample, y=100*Abundance_leg, group=1),stat="identity",color="red",size=5)+
   scale_x_discrete(limits = c("march", "april", "may", "june", "july","august"))+
-  scale_y_continuous(sec.axis = sec_axis(~./1000)) + theme_minimal()
+  scale_y_continuous(sec.axis = sec_axis(~./100)) + theme_minimal()
 dev.off()
 ```
 

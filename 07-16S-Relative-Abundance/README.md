@@ -13,19 +13,21 @@ library(ggplot2)
 #### Create Phyloseq object
 ##### ASV Table
 ```R
-seqtab_16S <- read.table("feature-table-16S.txt", header=T, row.names=1)
+seqtab_16S <- read.table("../feature-table-16S.txt", header=T, row.names=1)
 seqtab_16S_trans <- t(seqtab_16S)
 otu_16S <-otu_table(seqtab_16S_trans, taxa_are_rows=F)
 ```
 ##### Taxonomy
 ```R
-tax_16S <- read.table("taxonomy_16S.txt", header=F, row.names=1, sep="\t")
+tax_16S <- read.table("../taxonomy_16S.txt", header=F, row.names=1, sep="\t")
 tax_16S_phylo <- tax_table(as.matrix(tax_16S))
 #taxa_names(tax_16S_phylo)
 ```
 ##### Metadata
-map_16S <- read.table("metadata_unsure_16S_R.txt", sep="\t", header=T, row.names=1)
+```R
+map_16S <- read.table("../metadata_unsure_16S_R.txt", sep="\t", header=T, row.names=1)
 map_map_16S <- sample_data(map_16S)
+```
 ##### Merging phyloseq objects into 1
 ```R
 physeq_16S <- merge_phyloseq(otu_16S, map_map_16S, tax_16S_phylo)
@@ -33,7 +35,7 @@ physeq_16S <- merge_phyloseq(otu_16S, map_map_16S, tax_16S_phylo)
 #### Filter
 Remove unassigned bacteria
 ```R
-physeq_16S_filter1 = subset_taxa(physeq_16S, !V3=="Bacteria_unknown")
+physeq_16S_filter1 = subset_taxa(physeq_16S, !V3=="Bacteria_unknown" & !V3=="Eukryote")
 ```
 ### By Month
 #### Combine by month
