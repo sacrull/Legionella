@@ -31,7 +31,7 @@ tax_16S_phylo <- tax_table(as.matrix(tax_16S))
 #taxa_names(tax_16S_phylo)
 
 #reeading in metadata
-map_16S <- read.table("../metadata_unsure_16S_R.txt", sep="\t", header=T, row.names=1)
+map_16S <- read.table("../../metadata_unsure_16S_R.txt", sep="\t", header=T, row.names=1)
 map_map_16S <- sample_data(map_16S)
 
 #make 16S and 18S phyloseq object from qiime2
@@ -43,19 +43,34 @@ physeq_16S_bp_clr <- microbiome::transform(physeq_16S, "clr")
 glom_bp <- tax_glom(physeq_16S_bp_clr, taxrank=rank_names(physeq_16S_bp_clr)[6]) #collapse by genus level
 physeq_16S_clr_filter_bp = subset_taxa(glom_bp, V7=="Legionella")
 data_16S_bp <- psmelt(physeq_16S_clr_filter_bp)
-data_pb_2 <- data_16S_bp[, c(2,6,3)]
+data_pb_2 <- data_16S_bp[, c(2,29,3,6)]
+network_order=c("march_april","may_june","july_august")
+month_colors=c("march"="darkorchid1","april"="#147BD1","may"="#2DC84D","june"="#F7EA48","july"="orange1","august"="#E03C31")
 
-month_order=c("march","april","may","june", "july","august")
-
-
-pdf("leg_asv_boxplot_rel.pdf")
-ggplot(data_pb_2, aes(x=factor(month, levels=month_order),y=Abundance))+
-  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "none") +
+pdf("leg_asv_network_boxplot_clr.pdf")
+ggplot(data_pb_2, aes(x=factor(network, levels=network_order),y=Abundance))+
+  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
   geom_boxplot() +
-  geom_jitter(shape=16, position=position_jitter(0.2), size=1)+
+  geom_jitter(aes(color=month),shape=16, position=position_jitter(0.2), size=2.5)+
+  scale_color_manual(values = month_colors)+
   labs(x ="Month", y = "CLR Abundance")+
   theme_classic()
 dev.off()
+
+pdf("leg_asv_boxplot_clr.pdf")
+ggplot(data_pb_2, aes(x=factor(month, levels=month_order),y=Abundance))+
+  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
+  geom_boxplot() +
+  geom_jitter(aes(color=month),shape=16, position=position_jitter(0.2), size=2.5)+
+  scale_color_manual(values = month_colors)+
+  labs(x ="Month", y = "CLR Abundance")+
+  theme_classic()
+dev.off()
+
+
+
+
+
 
 physeq_16S_bp_rel <- microbiome::transform(physeq_16S, "compositional")
 glom_bp <- tax_glom(physeq_16S_bp_rel, taxrank=rank_names(physeq_16S_bp_rel)[6]) #collapse by genus level

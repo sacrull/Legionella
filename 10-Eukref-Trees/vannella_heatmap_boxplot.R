@@ -20,16 +20,16 @@ library(ggpubr)
 library(rstatix)
 
 #reading sequence tables
-seqtab_18S <- read.table("18S-ASV-renamed.txt", header=T, row.names=1)
+seqtab_18S <- read.table("../../18S-ASV-renamed.txt", header=T, row.names=1)
 seqtab_18S_trans <- t(seqtab_18S)
 otu_18S <-otu_table(seqtab_18S_trans, taxa_are_rows=F)
 #taxa_names(otu_18S)
 #reading in taxonomy
-tax_18S <- read.table("18S-tax-renamed.txt", header=F, row.names=1, sep="\t")
+tax_18S <- read.table("../../18S-tax-renamed.txt", header=F, row.names=1, sep="\t")
 tax_18S_phylo <- tax_table(as.matrix(tax_18S))
 #taxa_names(tax_18S_phylo)
 #reeading in metadata
-map_18S <- read.table("metadata_unsure_18S_R.txt", sep="\t", header=T, row.names=1)
+map_18S <- read.table("../../metadata_unsure_18S_R.txt", sep="\t", header=T, row.names=1)
 map_map_18S <- sample_data(map_18S)
 #physeq_16S_filter1 = subset_taxa(physeq_16S, V5=="Legionellales")
 physeq_18S <- merge_phyloseq(otu_18S, map_map_18S, tax_18S_phylo)
@@ -101,17 +101,20 @@ dev.off()
 
 
 #boxplot
+network_order=c("march_april","may_june","july_august")
+month_colors=c("march"="darkorchid1","april"="#147BD1","may"="#2DC84D","june"="#F7EA48","july"="orange1","august"="#E03C31")
 physeq_18S_bp_clr <- microbiome::transform(physeq_18S, "clr")
 glom_bp <- tax_glom(physeq_18S_bp_clr, taxrank=rank_names(physeq_18S_bp_clr)[6]) #collapse by genus level
 physeq_18S_clr_filter_bp = subset_taxa(glom_bp, V7=="Vannella")
 data_18S_bp <- psmelt(physeq_18S_clr_filter_bp)
-data_pb_2 <- data_18S_bp[, c(2,6,3)]
+data_pb_2 <- data_18S_bp[, c(2,29,3,6)]
 
 pdf("vannella_asv_boxplot_clr.pdf")
-ggplot(data_pb_2, aes(x=factor(month, levels=month_order),y=Abundance))+
-  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "none") +
+ggplot(data_pb_2, aes(x=factor(network, levels=network_order),y=Abundance))+
+  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
   geom_boxplot() +
-  geom_jitter(shape=16, position=position_jitter(0.2), size=1)+
+  geom_jitter(aes(color=month), shape=16, position=position_jitter(0.2), size=2.5)+
+  scale_color_manual(values = month_colors)+
   labs(x ="Month", y = "CLR Abundance")+
   theme_classic()
 dev.off()
