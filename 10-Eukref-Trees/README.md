@@ -291,23 +291,26 @@ dev.off()
 ## 5. Month Boxplots
 ### 5a. Getting object ready for boxplot
 ```R
+network_order=c("march_april","may_june","july_august") #order of bimonthly groups
+month_colors=c("march"="darkorchid1","april"="#147BD1","may"="#2DC84D","june"="#F7EA48","july"="orange1","august"="#E03C31") #month colors
 physeq_18S_bp_clr <- microbiome::transform(physeq_18S, "clr") #clr transformation
 glom_bp <- tax_glom(physeq_18S_bp_clr, taxrank=rank_names(physeq_18S_bp_clr)[6]) #collapse by genus level
 physeq_18S_clr_filter_bp = subset_taxa(glom_bp, V7=="Korotnevella") #get only genus of interest
 ```
 ### 5b. Converting phyloseq object into boxplot
 ```R
-data_18S_bp <- psmelt(physeq_18S_clr_filter_bp) #getting object into dataframe
-data_pb_2 <- data_18S_bp[, c(2,6,3)] #getting only columns of interest
+data_18S_bp <- psmelt(physeq_18S_clr_filter_bp) #getting object into a dataframe
+data_pb_2 <- data_18S_bp[, c(2,29,3,6)] #getting only columns of interest (sample name, abundance, month, and bimonthly category)
 ```
 ### 5c. Plot boxplot
 ```R
 pdf("koro_asv_boxplot_clr.pdf")
-ggplot(data_pb_2, aes(x=factor(month, levels=month_order),y=Abundance))+
-  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "none") + #adds wilcoxen test and only bars for signficant difference
+ggplot(data_pb_2, aes(x=factor(network, levels=network_order),y=Abundance))+
+  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "fdr") + #adds signficance between the categories
   geom_boxplot() +
-  geom_jitter(shape=16, position=position_jitter(0.2), size=1)+
-  labs(x ="Month", y = "CLR Abundance")+
+  geom_jitter(aes(color=month), shape=16, position=position_jitter(0.2), size=2.5)+
+  scale_color_manual(values = month_colors)+ #color dots by sample
+  labs(x ="Bimonthly", y = "CLR Abundance")+
   theme_classic()
 dev.off()
 ```
