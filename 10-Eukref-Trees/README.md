@@ -197,16 +197,16 @@ library(rstatix)
 ```R
 #getting 18S ASVs
 #reading sequence tables
-seqtab_18S <- read.table("18S-ASV-renamed.txt", header=T, row.names=1)
+seqtab_18S <- read.table("../../18S-ASV-renamed.txt", header=T, row.names=1)
 seqtab_18S_trans <- t(seqtab_18S)
 otu_18S <-otu_table(seqtab_18S_trans, taxa_are_rows=F)
 #taxa_names(otu_18S)
 #reading in taxonomy
-tax_18S <- read.table("18S-tax-renamed.txt", header=F, row.names=1, sep="\t")
+tax_18S <- read.table("../../18S-tax-renamed.txt", header=F, row.names=1, sep="\t")
 tax_18S_phylo <- tax_table(as.matrix(tax_18S))
 #taxa_names(tax_18S_phylo)
 #reeading in metadata
-map_18S <- read.table("metadata_18S.txt", sep="\t", header=T, row.names=1)
+map_18S <- read.table("../../metadata_18S.txt", sep="\t", header=T, row.names=1)
 map_map_18S <- sample_data(map_18S)
 #physeq_16S_filter1 = subset_taxa(physeq_16S, V5=="Legionellales")
 physeq_18S <- merge_phyloseq(otu_18S, map_map_18S, tax_18S_phylo)
@@ -224,12 +224,12 @@ data_18S_2 <- data_18S[, c(1,2,3)] # selecting only columns of interest
 ```
 ### 4f. Reading in tree
 ```R
-tre <- read.tree("koro_77.tre")
+tre <- read.tree("korotnevella.tre")
 ```
 ### 4g. Get genome frequency table ready for phyloseq
 ```R
 #reference otu table
-seqtab_18S_1 <- read.table("18S-ASV-renamed.txt", header=T) # your ASV frequency table
+seqtab_18S_1 <- read.table("../../18S-ASV-renamed.txt", header=T) # your ASV frequency table
 seqtab_ref <- read.table("ref_ASV.txt", header=T) #reference genomes
 #combing the otu tables
 otu <- dplyr::full_join(seqtab_18S_1, seqtab_ref) #join reference and ASV frequency together (to get the same number of samples)
