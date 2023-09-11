@@ -24,7 +24,7 @@ library(Hmisc)
 library(circlize) #https://mran.microsoft.com/snapshot/2016-01-05/web/packages/circlize/vignettes/visualize_relations_by_chord_diagram.pdf
 #library(reshape2)
 library(chorddiag)
-library(FSA)
+library(microbiome)
 
 
 setwd("/home/suzanne/legionella/R/pearson")
@@ -56,10 +56,12 @@ map_map_18S <- sample_data(map_18S)
 #make 16S and 18S phyloseq object from qiime2
 physeq_16S <- merge_phyloseq(otu_16S, map_map_16S, tax_16S_phylo)
 #physeq_16S_filter1 = subset_taxa(physeq_16S, V5=="Legionellales")
-physeq_16S_filter2 = subset_taxa(physeq_16S, V7=="Legionella")
+physeq_16S_filter2 <- microbiome::transform(physeq_16S,'compositional')
+physeq_16S_filter2 = subset_taxa(physeq_16S_filter2, V7=="Legionella")
 physeq_18S <- merge_phyloseq(otu_18S, map_map_18S, tax_18S_phylo)
 #known hosts and predator of legionella
 physeq_18S_filter1 = subset_taxa(physeq_18S, V3=="Amoebozoa" | V3=="Heterolobosea" | V3=="Ciliophora" |V3=="Cercozoa")
+physeq_18S_filter1 <- microbiome::transform(physeq_18S_filter1,'compositional')
 #merge phyloseq objects
 physeq_merge1 <- merge_phyloseq(physeq_16S_filter2,physeq_18S_filter1)
 physeq_merge2 <- subset_samples(physeq_merge1, month =="may" | month =="june")

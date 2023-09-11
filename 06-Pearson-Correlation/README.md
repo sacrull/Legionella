@@ -73,12 +73,14 @@ map_map_18S <- sample_data(map_18S)
 Combine 16S data into 1 object and filter out everything, but was is assigned to Legionella at the genus level
 ```R
 physeq_16S <- merge_phyloseq(otu_16S, map_map_16S, tax_16S_phylo)
+physeq_16S_filter2 <- microbiome::transform(physeq_16S,'compositional')
 physeq_16S_filter1 = subset_taxa(physeq_16S, V7=="Legionella")
 ```
 Combine 18S data into 1 phyloseq object and filter out everything that does not belong to phylums identified as haveing a relationship with Legionella (Amoebozoa, Heterolobosea, Ciliophora, Cercozoa)
 ```R
 physeq_18S <- merge_phyloseq(otu_18S, map_map_18S, tax_18S_phylo)
 physeq_18S_filter1 = subset_taxa(physeq_18S, V3=="Amoebozoa" | V3=="Heterolobosea" | V3=="Ciliophora" |V3=="Cercozoa")
+physeq_18S_filter1 <- microbiome::transform(physeq_18S_filter1,'compositional')
 ```
 Merge phyloseq objects together. In this example I filter it by March and April and I would then change it out to May and June then July and August for those months. 
 ```R
