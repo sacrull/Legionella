@@ -119,3 +119,15 @@ ggplot(data_pb_2, aes(x=factor(network, levels=network_order),y=Abundance))+
   theme_classic()
 dev.off()
 
+month_order=c("march","april","may","june","july", "august")
+
+#monthly
+pdf("vannella_asv_boxplot_clr_month.pdf")
+ggplot(data_pb_2, aes(x=factor(month, levels=month_order),y=Abundance))+
+  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
+  geom_boxplot() +
+  geom_jitter(aes(color=month), shape=16, position=position_jitter(0.2), size=2.5)+
+  scale_color_manual(values = month_colors)+
+  labs(x ="Month", y = "CLR Abundance")+
+  theme_classic()
+dev.off()

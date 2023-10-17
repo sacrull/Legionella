@@ -109,9 +109,10 @@ physeq_18S_clr_filter_bp = subset_taxa(glom_bp, V7=="Acanthamoeba")
 data_18S_bp <- psmelt(physeq_18S_clr_filter_bp)
 data_pb_2 <- data_18S_bp[, c(2,29,3,6)]
 
+#bimonthly
 pdf("acanthamoeba_asv_boxplot_clr.pdf")
 ggplot(data_pb_2, aes(x=factor(network, levels=network_order),y=Abundance))+
-  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
+  geom_pwc(label = "{p.adj.format}{p.adj.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
   geom_boxplot() +
   geom_jitter(aes(color=month), shape=16, position=position_jitter(0.2), size=2.5)+
   scale_color_manual(values = month_colors)+
@@ -119,15 +120,17 @@ ggplot(data_pb_2, aes(x=factor(network, levels=network_order),y=Abundance))+
   theme_classic()
 dev.off()
 
+month_order=c("march","april","may","june","july", "august")
 
-data_pb_2 %>% wilcox_test(Abundance ~ month, p.adjust.method = "fdr") %>%
-  add_significance()
-pdf("test.pdf")
+#monthly
+pdf("acanthamoeba_asv_boxplot_clr_month.pdf")
 ggplot(data_pb_2, aes(x=factor(month, levels=month_order),y=Abundance))+
-  #stat_compare_means(comparison= my_comparisons, method="wilcox.test",hide.ns =TRUE,label = "p.signif")+ # Add pairwise comparisons p-value
-  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "none") +
+  geom_pwc(label = "{p.adj.format}{p.adj.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
   geom_boxplot() +
-  geom_jitter(shape=16, position=position_jitter(0.2))+
+  geom_jitter(aes(color=month), shape=16, position=position_jitter(0.2), size=2.5)+
+  scale_color_manual(values = month_colors)+
   labs(x ="Month", y = "CLR Abundance")+
   theme_classic()
 dev.off()
+
+compare_means(Abundance ~ month,  data = data_pb_2,  p.adjust.method = "fdr")

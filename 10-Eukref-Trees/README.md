@@ -306,7 +306,7 @@ data_pb_2 <- data_18S_bp[, c(2,29,3,6)] #getting only columns of interest (sampl
 ```R
 pdf("koro_asv_boxplot_clr.pdf")
 ggplot(data_pb_2, aes(x=factor(network, levels=network_order),y=Abundance))+
-  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "fdr") + #adds signficance between the categories
+  geom_pwc(label = "{p.adj.format}{p.adj.signif}", hide.ns =TRUE, p.adjust.method = "fdr") + #adds signficance between the categories
   geom_boxplot() +
   geom_jitter(aes(color=month), shape=16, position=position_jitter(0.2), size=2.5)+
   scale_color_manual(values = month_colors)+ #color dots by sample

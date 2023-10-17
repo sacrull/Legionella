@@ -33,7 +33,7 @@ map_18S <- read.table("../../metadata_unsure_18S_R.txt", sep="\t", header=T, row
 map_map_18S <- sample_data(map_18S)
 #physeq_16S_filter1 = subset_taxa(physeq_16S, V5=="Legionellales")
 physeq_18S <- merge_phyloseq(otu_18S, map_map_18S, tax_18S_phylo)
-physeq_18S_clr_filter = subset_taxa(physeq_18S, V7=="Echinamoebida")
+physeq_18S_clr_filter = subset_taxa(physeq_18S, V7=="Echinamoeba")
 
 #get monthly CLR
 ps1 <- merge_samples(physeq_18S, "month") #combine by month
@@ -113,7 +113,7 @@ data_pb_2 <- data_18S_bp[, c(2,29,3,6)]
 
 pdf("echi_asv_boxplot_clr.pdf")
 ggplot(data_pb_2, aes(x=factor(network, levels=network_order),y=Abundance))+
-  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
+  geom_pwc(label = "{p.adj.format}{p.adj.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
   geom_boxplot() +
   geom_jitter(aes(color=month), shape=16, position=position_jitter(0.2), size=2.5)+
   scale_color_manual(values = month_colors)+
@@ -121,3 +121,17 @@ ggplot(data_pb_2, aes(x=factor(network, levels=network_order),y=Abundance))+
   theme_classic()
 dev.off()
 
+month_order=c("march","april","may","june","july", "august")
+
+#monthly
+pdf("echi_asv_boxplot_clr_month.pdf")
+ggplot(data_pb_2, aes(x=factor(month, levels=month_order),y=Abundance))+
+  geom_pwc(label = "{p.adj.format}{p.adj.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
+  geom_boxplot() +
+  geom_jitter(aes(color=month), shape=16, position=position_jitter(0.2), size=2.5)+
+  scale_color_manual(values = month_colors)+
+  labs(x ="Month", y = "CLR Abundance")+
+  theme_classic()
+dev.off()
+
+compare_means(Abundance ~ network,  data = data_pb_2,  p.adjust.method = "fdr")
