@@ -31,7 +31,7 @@ tax_16S_phylo <- tax_table(as.matrix(tax_16S))
 #taxa_names(tax_16S_phylo)
 
 #reeading in metadata
-map_16S <- read.table("../../metadata_unsure_16S_R.txt", sep="\t", header=T, row.names=1)
+map_16S <- read.table("../metadata_unsure_16S_R.txt", sep="\t", header=T, row.names=1)
 map_map_16S <- sample_data(map_16S)
 
 #make 16S and 18S phyloseq object from qiime2
@@ -49,7 +49,7 @@ month_colors=c("march"="darkorchid1","april"="#147BD1","may"="#2DC84D","june"="#
 
 pdf("leg_asv_network_boxplot_clr.pdf")
 ggplot(data_pb_2, aes(x=factor(network, levels=network_order),y=Abundance))+
-  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
+  geom_pwc(label = "{p.adj.format}{p.adj.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
   geom_boxplot() +
   geom_jitter(aes(color=month),shape=16, position=position_jitter(0.2), size=2.5)+
   scale_color_manual(values = month_colors)+
@@ -57,9 +57,13 @@ ggplot(data_pb_2, aes(x=factor(network, levels=network_order),y=Abundance))+
   theme_classic()
 dev.off()
 
+compare_means(Abundance ~ network,  data = data_pb_2,  p.adjust.method = "fdr")
+
+
+month_order = c("march", "april", "may", "june", "july", "august")
 pdf("leg_asv_boxplot_clr.pdf")
 ggplot(data_pb_2, aes(x=factor(month, levels=month_order),y=Abundance))+
-  geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
+  geom_pwc(label = "{p.adj.format}{p.adj.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
   geom_boxplot() +
   geom_jitter(aes(color=month),shape=16, position=position_jitter(0.2), size=2.5)+
   scale_color_manual(values = month_colors)+
@@ -68,6 +72,7 @@ ggplot(data_pb_2, aes(x=factor(month, levels=month_order),y=Abundance))+
 dev.off()
 
 
+compare_means(Abundance ~ month,  data = data_pb_2,  p.adjust.method = "fdr")
 
 
 

@@ -54,12 +54,20 @@ map_18S <- read.table("../metadata_unsure_18S_R.txt", sep="\t", header=T, row.na
 map_map_18S <- sample_data(map_18S)
 #make 16S and 18S phyloseq object from qiime2
 physeq_16S <- merge_phyloseq(otu_16S, map_map_16S, tax_16S_phylo)
-physeq_16S_filter2 <- microbiome::transform(physeq_16S,'compositional')
-physeq_16S_filter2 = subset_taxa(physeq_16S_filter2, V7=="Legionella")
+physeq_16S <- subset_taxa(physeq_16S, !V3=="Bacteria_unknown" & !V2=="Eukaryota")
+physeq_16S1 <- prune_samples(sample_sums(physeq_16S) > 10000, physeq_16S) #remove less than 2000 reads
+rare_16S <- rarefy_even_depth(physeq_16S1, rngseed=1, sample.size=0.99*min(sample_sums(physeq_16S1)), replace=F)
+#rare_16S <- tax_glom(rare_16S, taxrank=rank_names(rare_16S)[6])
+physeq_16S_filter2 <- subset_taxa(rare_16S, V7=="Legionella")
+
 physeq_18S <- merge_phyloseq(otu_18S, map_map_18S, tax_18S_phylo)
+physeq_18S <- subset_taxa(physeq_18S, !V2=="Bacteria" & !V3=="Eukaryota_unknown" & !V3=="uncultured")
+physeq_18S2 <- prune_samples(sample_sums(physeq_18S) > 5000, physeq_18S) #remove less than 2000 reads
+rare_18S <- rarefy_even_depth(physeq_18S2, rngseed=1, sample.size=0.99*min(sample_sums(physeq_18S2)), replace=F)
 #known hosts and predator of legionella
-physeq_18S_filter1 = subset_taxa(physeq_18S, V3=="Amoebozoa" | V3=="Heterolobosea" | V3=="Ciliophora" |V3=="Cercozoa")
-physeq_18S_filter1 <- microbiome::transform(physeq_18S_filter1,'compositional')
+physeq_18S_filter1 = subset_taxa(rare_18S, V3=="Amoebozoa" | V3=="Heterolobosea" | V3=="Ciliophora" |V3=="Cercozoa")
+#physeq_18S_filter1 <- tax_glom(physeq_18S_filter1, taxrank=rank_names(physeq_18S_filter1)[6])
+#physeq_18S_filter1 <- microbiome::transform(physeq_18S_filter1,'compositional')
 #merge phyloseq objects
 physeq_merge1 <- merge_phyloseq(physeq_16S_filter2,physeq_18S_filter1)
 physeq_merge2 <- subset_samples(physeq_merge1, month =="march" | month =="april")
@@ -135,7 +143,7 @@ filter1_BH_pear <- subset(flatten_ASV_pear5, BH < .05)
 filter2_BH_pear <- filter1_BH_pear[, c(1:3)]
 
 
-pdf("BH_mar_ap_pear_ordered_clean.pdf", height=14, width= 14)
+pdf("BH_mar_ap_pear_ordered_cleantest.pdf", height=14, width= 14)
 chordDiagram(filter2_BH_pear, order = ordered_list2, transparency = 0.5, grid.col = leg_pred_host_diff, col = ifelse(filter2_BH_pear$origin == "Legionella", ifelse(filter2_BH_pear$value > 0, ifelse(filter2_BH_pear$value > 0.7, "#0487fb", ifelse(filter2_BH_pear$value > 0.5, "#04F0FB", "#04FB38")), "red") , "gray"),
 	annotationTrack = "grid", preAllocateTracks = list(track.height = 0.1))
 

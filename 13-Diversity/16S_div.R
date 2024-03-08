@@ -14,6 +14,8 @@ library(vegan)
 library(sinkr)
 library(ecole)
 library(ggpubr)
+library(tabletools)
+library(metagMisc)
 
 #reading sequence tables
 seqtab_16S <- read.table("../feature-table-16S.txt", header=T, row.names=1)
@@ -32,7 +34,7 @@ map_map_16S <- sample_data(map_16S)
 
 #make 16S and 18S phyloseq object from qiime2
 physeq_16S <- merge_phyloseq(otu_16S, map_map_16S, tax_16S_phylo)
-physeq_16S <- subset_taxa(physeq_16S, !V3=="Bacteria_unknown", !V2=="Eukaryota")
+physeq_16S <- subset_taxa(physeq_16S, !V3=="Bacteria_unknown" & !V2=="Eukaryota")
 clr_16S <- microbiome::transform(physeq_16S,'clr')
 
 #beta diversity
@@ -88,17 +90,16 @@ bioENV_16S$dark$best.model.vars
 bioENV_16S$dark$best.model.rho
 
 #alpha diversity
-to_remove <- c("jul20_W_176") #removed those samples since they didnt have any OTUs of interest
-physeq_16S_filter1 <- prune_samples(!(sample_names(physeq_16S) %in% to_remove), physeq_16S)
-rare_16S <- rarefy_even_depth(otu_table(physeq_16S_filter1), rngseed = TRUE, replace = FALSE)
-data_otu_filt_rar = data.frame(otu_table(rare_16S)) # create a separated file
-ps.rar.16S <- phyloseq(rare_16S, tax_16S_phylo, map_map_16S) # create a phyloseq object
+sample_sums(physeq_16S)
+physeq_16S1 <- prune_samples(sample_sums(physeq_16S) > 10000, physeq_16S) #remove less than 2000 reads
+rare_16S <- rarefy_even_depth(physeq_16S1, rngseed=1, sample.size=0.99*min(sample_sums(physeq_16S1)), replace=F)
+sample_sums(rare_16S)
 
 permanova_pairwise(otu_table(ps.rar.16S), grp=sample_data(ps.rar.16S)$type, method="bray") #check beta diversity between samples
 
 #plot differences in shannon diveristy across samples
 pdf("./adiv.type.16S.pdf")
-plot_richness(ps.rar.16S, measures=c("Observed", "Shannon"), x="type") + 
+plot_richness(rare_16S, measures=c("Observed", "Shannon"), x="type") + 
     theme_minimal() + 
     geom_jitter(alpha=0.25) +
     geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
@@ -113,8 +114,8 @@ plot_richness(ps.rar.16S, measures=c("Observed", "Shannon"), x="type") +
   )
 dev.off()
 #get correlation between shannon diveristy for alls samples and enviroment
-alpha <- estimate_richness(ps.rar.16S, split = TRUE, measures = NULL)
-env <- sample_data(ps.rar.16S)
+alpha <- estimate_richness(rare_16S, split = TRUE, measures = NULL)
+env <- sample_data(rare_16S)
 env.mat <- env[, c(8,9,10,11,12,13,14)]
 env.mat$names <- rownames(env.mat)
 alpha$names <- rownames(alpha)
@@ -147,8 +148,8 @@ dev.off()
 
 #alpha corr for each type
 for(i in types) {
-subset.16S <- subset_samples(ps.rar.16S, type==i)
-alpha <- estimate_richness(subset.16S, split = TRUE, measures = NULL)
+subset.16S <- subset_samples(rare_16S, type==i)
+alpha <- estimate_richness(rare_16S, split = TRUE, measures = NULL)
 env <- sample_data(subset.16S)
 env.mat <- env[, c(8,9,10,11,12,13,14)]
 env.mat$names <- rownames(env.mat)
@@ -179,3 +180,63 @@ corrplot::corrplot(cor_enviro_adjust$r, type="upper", order="original",
          tl.cex = 0.4, na.label= " ")
 dev.off() 
 }
+
+
+
+#relationship between alpha diversity and legionella
+physeq_16S_filter1 = subset_taxa(rare_16S, V7=="Legionella")
+ASV_freq <- as(otu_table(physeq_16S_filter1), "matrix")
+trans_ASV_freq <- t(ASV_freq)
+trans_ASV_freq_df1 <- as.data.frame(trans_ASV_freq)
+trans_ASV_freq_df2 <- rownames_to_column(trans_ASV_freq_df1, var = "ASV")
+#getting taxa genus
+taxa = as(tax_table(rare_16S), "matrix")
+taxadf = as.data.frame(taxa)
+orderdf = select(taxadf, V7)
+orderdf <- orderdf %>% 
+  rownames_to_column(var = "ASV")
+#renmaing all to genus level
+renamed_ASV_freq1 <- left_join(trans_ASV_freq_df2, orderdf, by=c('ASV'='ASV'))
+colnames(renamed_ASV_freq1)[48] <- "Genus"
+renamed_ASV_freq2 <- renamed_ASV_freq1[, c(48,2:47)]
+renamed_ASV_freq3 <- renamed_ASV_freq2 %>%
+  group_by(Genus) %>%
+  summarise(across(c(1:46), sum))
+renamed_ASV_freq4 <- as.data.frame(renamed_ASV_freq3)
+rownames(renamed_ASV_freq4) <- renamed_ASV_freq4[,1]
+renamed_ASV_freq4[,1] <- NULL
+renamed_ASV_freq5 <- as.data.frame(t(as.matrix(renamed_ASV_freq4)))
+
+renamed_ASV_freq5$names <- row.names(renamed_ASV_freq5)   
+
+test <- inner_join(meta_alpha, renamed_ASV_freq5, by=c('names'='names'))
+test2 <- test[,c(2:10)]
+test3 <-as.matrix(test2)
+
+#corr
+cor_enviro_spear <- rcorr(test3,type = c("spearman"))
+cor_enviro_adjust <- rcorr_padjust(cor_enviro_spear, method = "BH")
+diag(cor_enviro_adjust$P) <- 0
+
+pdf("test.pdf")
+corrplot::corrplot(cor_enviro_adjust$r, type="upper", order="original", 
+         p.mat = cor_enviro_adjust$P, sig.level = 0.05, insig = "blank",
+         tl.cex = 0.4, na.label= " ")
+dev.off() 
+
+#rarefaction curve
+options(warn=-1) # suppress warnings
+p <- ggrare(physeq_16S_filter2, step = 1000, color = "month", se = TRUE)
+#p <- p + facet_wrap(~Tooth_Classification)
+pdf("./rarefaction_plots.16S.pdf")
+p + theme_minimal() + scale_x_continuous(labels = scales::comma)
+dev.off()
+options(warn=0) # back on
+options(warn=-1) # suppress warnings
+p <- ggrare(rare_16S, step = 1000, color = "month", se = TRUE)
+#p <- p + facet_wrap(~Tooth_Classification)
+pdf("./raredcurve_16S.pdf")
+p + theme_minimal() + scale_x_continuous(labels = scales::comma)
+dev.off()
+options(warn=0) # back on
+

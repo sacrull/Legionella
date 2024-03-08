@@ -10,11 +10,11 @@ library(RColorBrewer)
 #library(RColorBrewer)
 #library(GGally)
 #library(reshape2)
-
+#remotes::install_github("bcdudek/bcdstats")
 #install.packages("remotes")
 #remotes::install_github("JMLuther/tabletools")
 #reading in envriomental metadata
-enviro_data <- read.table("metadata_unsure_R.txt", 
+enviro_data <- read.table("~/legionella/R/enviro_corr/metadata_R.txt", 
                    header=TRUE, row.names=1, sep = "\t")
 #reading in 16S data into phyloseq object and filtering to just legionella
 seqtab_16S <- read.table("feature-table-16S.txt", header=T, row.names=1)
@@ -25,8 +25,11 @@ tax_16S_phylo <- tax_table(as.matrix(tax_16S))
 map_16S <- read.table("metadata_unsure_16S_R.txt", sep="\t", header=T, row.names=1)
 map_map_16S <- sample_data(map_16S)
 physeq_16S <- merge_phyloseq(otu_16S, map_map_16S, tax_16S_phylo)
-physeq_16S_rel <- microbiome::transform(physeq_16S, "compositional")
-physeq_16S_filter2 = subset_taxa(physeq_16S_rel, V7=="Legionella")
+physeq_16S1 <- prune_samples(sample_sums(physeq_16S) > 10000, physeq_16S) #remove less than 2000 reads
+rare_16S <- rarefy_even_depth(physeq_16S1, rngseed=1, sample.size=0.99*min(sample_sums(physeq_16S1)), replace=F)
+sample_sums(rare_16S)
+physeq_16S_rel <- microbiome::transform(rare_16S, "compositional")
+physeq_16S_filter2 = subset_taxa(rare_16S, V7=="Legionella")
 
 #combinging all legionella 
 ASV_freq <- as(otu_table(physeq_16S_filter2), "matrix")
@@ -42,11 +45,11 @@ orderdf <- orderdf %>%
   rownames_to_column(var = "ASV")
 #renmaing all to genus level
 renamed_ASV_freq1 <- left_join(trans_ASV_freq_df2, orderdf, by=c('ASV'='ASV'))
-colnames(renamed_ASV_freq1)[49] <- "Genus"
-renamed_ASV_freq2 <- renamed_ASV_freq1[, c(49,2:48)]
+colnames(renamed_ASV_freq1)[48] <- "Genus"
+renamed_ASV_freq2 <- renamed_ASV_freq1[, c(48,2:47)]
 renamed_ASV_freq3 <- renamed_ASV_freq2 %>%
   group_by(Genus) %>%
-  summarise(across(c(1:47), sum))
+  summarise(across(c(1:46), sum))
 renamed_ASV_freq4 <- as.data.frame(renamed_ASV_freq3)
 rownames(renamed_ASV_freq4) <- renamed_ASV_freq4[,1]
 renamed_ASV_freq4[,1] <- NULL
@@ -55,24 +58,26 @@ renamed_ASV_freq5 <- t(as.matrix(renamed_ASV_freq4))
 
 #running correlation
 ASV_freq_df <- as.data.frame(ASV_freq, row.names=NULL)
-names(ASV_freq_df) <- c("ASV1",  "ASV2", "ASV3", "ASV4", "ASV5", "ASV6", "ASV7", "ASV8", "ASV9", "ASV10",  "ASV11",  "ASV12",  "ASV13",  "ASV14",  "ASV15",  "ASV16",  "ASV17",  "ASV18",  "ASV19",  "ASV20",  "ASV21",  "ASV22",  "ASV23",  "ASV24",  "ASV25",  "ASV26",  "ASV27",  "ASV28",  "ASV29",  "ASV30",  "ASV31",  "ASV32",  "ASV33",  "ASV34",  "ASV35",  "ASV36",  "ASV37",  "ASV38",  "ASV39",  "ASV40",  "ASV41",  "ASV42",  "ASV43",  "ASV44",  "ASV45",  "ASV46",  "ASV47",  "ASV48",  "ASV49",  "ASV50",  "ASV51",  "ASV52",  "ASV53",  "ASV54",  "ASV55",  "ASV56",  "ASV57",  "ASV58",  "ASV59",  "ASV60",  "ASV61",  "ASV62",  "ASV63",  "ASV64",  "ASV65",  "ASV66",  "ASV67",  "ASV68",  "ASV69",  "ASV70")
+names(ASV_freq_df) <- c("ASV1",  "ASV2", "ASV3", "ASV4", "ASV5", "ASV6", "ASV7", "ASV8", "ASV9", "ASV10",  "ASV11",  "ASV12",  "ASV13",  "ASV14",  "ASV15",  "ASV16",  "ASV17",  "ASV18",  "ASV19",  "ASV20",  "ASV21",  "ASV22",  "ASV23",  "ASV24",  "ASV25",  "ASV26",  "ASV27",  "ASV28",  "ASV29",  "ASV30",  "ASV31",  "ASV32",  "ASV33",  "ASV34",  "ASV35",  "ASV36",  "ASV37",  "ASV38",  "ASV39",  "ASV40",  "ASV41",  "ASV42",  "ASV43",  "ASV44",  "ASV45",  "ASV46",  "ASV47",  "ASV48",  "ASV49",  "ASV50",  "ASV51",  "ASV52",  "ASV53",  "ASV54",  "ASV55",  "ASV56",  "ASV57",  "ASV58",  "ASV59",  "ASV60",  "ASV61",  "ASV62",  "ASV63",  "ASV64",  "ASV65",  "ASV66",  "ASV67",  "ASV68")
 ASV_freq_df$sample <- row.names(ASV_freq_df)
 
 
-enviro_data2<- enviro_data[,c(2,3,7:13,15:19)]
+enviro_data2<- enviro_data[,c(2,3,7:13,20:24)]
 merdged_data_enviro1 <- merge(enviro_data2, renamed_ASV_freq5,
                           by = 'row.names', all = TRUE)
 colnames(merdged_data_enviro1)[1] <- "sample"
 merdged_data_enviro3 <- merge(merdged_data_enviro1, ASV_freq_df,
                           by = c('sample'='sample'), all = TRUE)
 
-merdged_data_enviro3$water <- +(merdged_data_enviro3$type == "water" & !is.na(merdged_data_enviro3$type)) 
+merdged_data_enviro3$water <- +(merdged_data_enviro3$type == "water" & !is.na(merdged_data_enviro3$type))
+merdged_data_enviro3$bright <- +(merdged_data_enviro3$type == "bright" & !is.na(merdged_data_enviro3$type))
+merdged_data_enviro3$dark <- +(merdged_data_enviro3$type == "dark" & !is.na(merdged_data_enviro3$type))    
 merdged_data_enviro3$months <- ifelse(merdged_data_enviro3$month == "march" , 3, 
     ifelse(merdged_data_enviro3$month == "april", 4 , 
     ifelse(merdged_data_enviro3$month == "may", 5, 
     ifelse(merdged_data_enviro3$month == "june", 6, 
     ifelse(merdged_data_enviro3$month == "july", 7, 8)))))
-merdged_data_enviro4<- merdged_data_enviro3[,c(87,88,4:86)]
+merdged_data_enviro4<- merdged_data_enviro3[,c(85:88,4:16)]
 
 enviro_data_mat <- as.matrix(merdged_data_enviro4)
 

@@ -13,9 +13,11 @@ library(chorddiag)
 library(vegan)
 library(sinkr)
 library(ecole)
+library(ranacapa)
 library(bcdstats)
 library(ggpubr)
-
+library(tabletools)
+setwd("~/legionella/R/diversity")
 #reading sequence tables
 seqtab_18S <- read.table("../18S-ASV-renamed.txt", header=T, row.names=1)
 seqtab_18S_trans <- t(seqtab_18S)
@@ -34,7 +36,7 @@ map_map_18S <- sample_data(map_18S)
 physeq_18S <- merge_phyloseq(otu_18S, map_map_18S, tax_18S_phylo)
 
 #make 18S and 18S phyloseq object from qiime2
-physeq_18S = subset_taxa(physeq_18S, !V2=="Bacteria", !V3=="Eukaryota_unknown")
+physeq_18S = subset_taxa(physeq_18S, !V2=="Bacteria" & !V3=="Eukaryota_unknown")
 clr_18S <- microbiome::transform(physeq_18S,'clr')
 
 #beta diversity
@@ -90,15 +92,15 @@ bioENV_18S$dark$best.model.vars
 bioENV_18S$dark$best.model.rho
 
 #alpha diversity
-rare_18S <- rarefy_even_depth(otu_table(physeq_18S), rngseed = TRUE, replace = FALSE)
-data_otu_filt_rar = data.frame(otu_table(rare_18S)) # create a separated file
-ps.rar.18S <- phyloseq(rare_18S, tax_18S_phylo, map_map_18S) # create a phyloseq object
+physeq_18S2 <- prune_samples(sample_sums(physeq_18S) > 5000, physeq_18S) #remove less than 2000 reads
+rare_18S <- rarefy_even_depth(physeq_18S2, rngseed=1, sample.size=0.99*min(sample_sums(physeq_18S2)), replace=F)
+sample_sums(rare_18S)
 
-permanova_pairwise(otu_table(ps.rar.18S), grp=sample_data(ps.rar.18S)$type, method="bray") #check beta diversity between samples
+permanova_pairwise(otu_table(rare_18S), grp=sample_data(rare_18S)$type, method="bray") #check beta diversity between samples
 
 #plot differences in shannon diveristy across samples
 pdf("./adiv.type.18S.pdf")
-plot_richness(ps.rar.18S, measures=c("Observed", "Shannon"), x="type") + 
+plot_richness(rare_18S, measures=c("Observed", "Shannon"), x="type") + 
     theme_minimal() + 
     geom_jitter(alpha=0.25) +
     geom_pwc(label = "{p.format}{p.signif}", hide.ns =TRUE, p.adjust.method = "fdr") +
@@ -113,8 +115,8 @@ plot_richness(ps.rar.18S, measures=c("Observed", "Shannon"), x="type") +
   )
 dev.off()
 #get correlation between shannon diveristy for alls samples and enviroment
-alpha <- estimate_richness(ps.rar.18S, split = TRUE, measures = NULL)
-env <- sample_data(ps.rar.18S)
+alpha <- estimate_richness(rare_18S, split = TRUE, measures = NULL)
+env <- sample_data(rare_18S)
 env.mat <- env[, c(8,9,10,11,12,13,14)]
 env.mat$names <- rownames(env.mat)
 alpha$names <- rownames(alpha)
@@ -147,7 +149,7 @@ dev.off()
 
 #alpha corr for each type
 for(i in types) {
-subset.18S <- subset_samples(ps.rar.18S, type==i)
+subset.18S <- subset_samples(rare_18S, type==i)
 alpha <- estimate_richness(subset.18S, split = TRUE, measures = NULL)
 env <- sample_data(subset.18S)
 env.mat <- env[, c(8,9,10,11,12,13,14)]
@@ -179,3 +181,20 @@ corrplot::corrplot(cor_enviro_adjust$r, type="upper", order="original",
          tl.cex = 0.4, na.label= " ")
 dev.off() 
 }
+
+#rarefaction curve
+options(warn=-1) # suppress warnings
+p <- ggrare(physeq_18S, step = 1000, color = "month", se = TRUE)
+#p <- p + facet_wrap(~Tooth_Classification)
+pdf("./rarefaction_plots.18S.pdf")
+p + theme_minimal() + scale_x_continuous(labels = scales::comma)
+dev.off()
+options(warn=0) # back on
+
+options(warn=-1) # suppress warnings
+p <- ggrare(rare_18S, step = 1000, color = "month", se = TRUE)
+#p <- p + facet_wrap(~Tooth_Classification)
+pdf("./raredcurve_18S.pdf")
+p + theme_minimal() + scale_x_continuous(labels = scales::comma)
+dev.off()
+options(warn=0) # back on

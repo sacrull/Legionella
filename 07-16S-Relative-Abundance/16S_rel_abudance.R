@@ -8,9 +8,9 @@ library(phyloseq)
 library(microbiome)
 library(scales)
 library(ggplot2)
+library(metagMisc)
 
-
-setwd("/home/suzanne/legionella/R/rel_abundance")
+setwd("~/legionella/R/rel_abudance")
 #reading sequence tables
 seqtab_16S <- read.table("../feature-table-16S.txt", header=T, row.names=1)
 seqtab_16S_trans <- t(seqtab_16S)
@@ -27,9 +27,11 @@ map_16S <- read.table("../metadata_unsure_16S_R.txt", sep="\t", header=T, row.na
 map_map_16S <- sample_data(map_16S)
 
 physeq_16S <- merge_phyloseq(otu_16S, map_map_16S, tax_16S_phylo)
-
+physeq_16S1 <- prune_samples(sample_sums(physeq_16S) > 10000, physeq_16S) #remove less than 2000 reads
+rare_16S <- rarefy_even_depth(physeq_16S1, rngseed=1, sample.size=0.99*min(sample_sums(physeq_16S1)), replace=F)
+sample_sums(rare_16S)
 #remove unassigned bacter
-physeq_16S_filter1 = subset_taxa(physeq_16S, !V3=="Bacteria_unknown")
+physeq_16S_filter1 = subset_taxa(rare_16S, !V3=="Bacteria_unknown")
 
 ps1 <- merge_samples(physeq_16S_filter1, "month") #combine by month
 
@@ -43,8 +45,9 @@ data$V3[data$Abundance < 0.01] <- "< 1% abund" # rename low freq phyla
 medians <- plyr::ddply(data, ~V3, function(x) c(median=median(x$Abundance)))
 medians
 #get just useful columns
-rel_16S <- data[,c(2,3,38)]
+rel_16S <- data[,c(2,3,39)]
 
+subset(rel_16S, V3 == "Bacteroidetes")
 
 #sanity check
 sum(data[data$Sample == 'april',]$Abundance)
@@ -63,9 +66,7 @@ dev.off()
 
 
 ##not by month
-to_remove <- c("jul20_W_176") #removed those samples since they didnt have any OTUs of interest
-physeq_16S_filter2 <- prune_samples(!(sample_names(physeq_16S_filter1) %in% to_remove), physeq_16S_filter1)
-rel.abund.all <- transform_sample_counts(physeq_16S_filter2, function(x) x/sum(x))
+rel.abund.all <- transform_sample_counts(rare_16S, function(x) x/sum(x))
 glom_all <- tax_glom(rel.abund.all, taxrank=rank_names(rel.abund.all)[2], NArm=TRUE) #collapse by phlyum level
 data_all <- psmelt(glom_all)
 data_all$V3 <- as.character(data_all$V3) #convert character
@@ -74,7 +75,7 @@ data_all$V3[data_all$Abundance < 0.01] <- "< 1% abund" # rename low freq phyla
 medians <- plyr::ddply(data_all, ~V3, function(x) c(median=median(x$Abundance)))
 medians
 #get just useful columns
-rel_16S_all <- data_all[,c(2,3,38)]
+rel_16S_all <- data_all[,c(2,3,39)]
 
 
 #sanity check

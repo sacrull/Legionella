@@ -31,7 +31,9 @@ map_map_18S <- sample_data(map_18S)
 Getting only known predators and host phyla of legionella
 ```R
 physeq_18S <- merge_phyloseq(otu_18S, map_map_18S, tax_18S_phylo)
-physeq_18S_filter1 = subset_taxa(physeq_18S, V3=="Amoebozoa" | V3=="Heterolobosea" | V3=="Ciliophora" |V3=="Cercozoa")
+physeq_18S2 <- prune_samples(sample_sums(physeq_18S) > 5000, physeq_18S) #remove less than 2000 reads
+rare_18S <- rarefy_even_depth(physeq_18S2, rngseed=1, sample.size=0.99*min(sample_sums(physeq_18S2)), replace=F)
+physeq_18S_filter1 = subset_taxa(rare_18S, V3=="Amoebozoa" | V3=="Heterolobosea" | V3=="Ciliophora" |V3=="Cercozoa")
 ```
 ### Remove empty samples
 ```R
@@ -67,7 +69,7 @@ medians
 ```
 ## 7. Getting Just Useful 18S Columns
 ```R
-rel_18S <- data[,c(2,3,42)]
+rel_18S <- data[,c(2,3,43)]
 ```
 ## 8. Getting 16S Phyloseq Object
 ### Frequency Table
@@ -89,10 +91,12 @@ map_map_16S <- sample_data(map_16S)
 ### Merging 16S Objet
 ```R
 physeq_16S <- merge_phyloseq(otu_16S, map_map_16S, tax_16S_phylo
+physeq_16S1 <- prune_samples(sample_sums(physeq_16S) > 10000, physeq_16S) #remove less than 2000 reads
+rare_16S <- rarefy_even_depth(physeq_16S1, rngseed=1, sample.size=0.99*min(sample_sums(physeq_16S1)), replace=F)
 ```
 ### Merge Samples by Month
 ```R
-ps16 <- merge_samples(physeq_16S, "month") #combine by month
+ps16 <- merge_samples(rare_16S, "month") #combine by month
 ```
 ## 9. Get Relative Abundance
 ### Relative Abundance
@@ -115,7 +119,7 @@ leg <- data_16S[data_16S$V7 == 'Legionella',]
 ```
 ### Get just needed columns
 ```R
-leg_rel <- leg[, c(2,3,42)]
+leg_rel <- leg[, c(2,3,43,24)]
 ```
 ### Rename Columns
 ```R
@@ -131,13 +135,26 @@ combined_leg_18S <- left_join(rel_18S, leg_rel, by = join_by(Sample == Sample))
 ```R
 leg_pred_host_diff=c("Legionella"="plum3","Acanthamoeba" = "#D53E4F", "Echinamoeba"="#FDAE61", "Korotnevella" ="#FEE08B", "Naegleria"="#E6F598", "Tetrahymena"="#ABDDA4", "Vannella" = "#66C2A5","Vermamoeba"="#3288BD", "Arcellinida_unknown" = "gray52", "BIO10-D10" = "gray52", "Dactylopodida" = "gray52", "Stygamoebida" = "gray52", "Euamoebida" = "gray52", "BOLA868" = "gray52", "Centramoebida" = "gray52", "Mycamoeba" = "gray52", "Vannella" = "gray52", "Euamoebida_unknown" = "gray52", "Vannellida" = "gray52", "Tubulinea_unknown" = "gray52", "Tubulinea" = "gray52", "uncultured" = "gray52", "Vannellida_unknown" = "gray52", "Amoebozoa_unknown" = "gray52", "Cryptodifflugia" = "gray52", "Amoebozoa" = "gray52", "Vermistella" = "gray52", "Protosteliopsis" = "gray52", "Arcellinida" = "gray52", "Arcella" = "gray52", "Gymnophrys" = "gray67", "Heteromita" = "gray67", "Cercozoa_unknown" = "gray67", "uncultured" = "gray67", "Paracercomonas" = "gray67", "Cercozoa" = "gray67", "Glissomonadida_unknown" = "gray67", "Vampyrellidae" = "gray67", "Tracheleuglypha" = "gray67", "Cercomonadidae" = "gray67", "Eocercomonas" = "gray67", "Kraken" = "gray67", "Euglypha" = "gray67", "Glissomonadida" = "gray67", "Trinema" = "gray67", "Thecofilosea_unknown" = "gray67", "Chilodonella" = "gray52", "Amphileptus" = "gray52", "Cyrtolophosis" = "gray52", "Leptopharynx" = "gray52", "Hymenostomatia" = "gray52", "Cyclidium" = "gray52", "Colpodea_unknown" = "gray52", "Hypotrichia_unknown" = "gray52", "Vorticella" = "gray52", "Protocyclidium" = "gray52", "Peritrichia" = "gray52", "Spirotrichea_unknown" = "gray52", "Oligohymenophorea" = "gray52", "Conthreep_unknown" = "gray52", "Nassophorea" = "gray52", "Colpodida" = "gray52", "Telotrochidium" = "gray52", "Nassophorea_unknown" = "gray52", "Oligohymenophorea_unknown" = "gray52", "Aspidisca" = "gray52", "Haptoria_unknown" = "gray52", "Ephelota" = "gray52", "Cyrtolophosidida" = "gray52", "Allovahlkampfia" = "gray52", "Tetramitia_unknown" = "gray52", "Vahlkampfia" = "gray52", "Neovahlkampfia" = "gray52", "Cercomonadidae_unknown" = "gray67", "Euglyphida_unknown" = "gray67", "Hypotrichia_unknown" = "gray52", "Oligohymenphorea_unknown"="gray52", "Oligohymenophorea_unkown"="gray52", "Vampyrellidae_unknown"="gray67")
 ```
-### Graphinh
+### Graphing
 ```R
+svg("pred_host_leg_rel_abund.svg", width=30, height=18)
+ggplot(combined_leg_18S)  + 
+  geom_bar(aes(x=Sample, y=Abundance,fill=V7),stat="identity", position="stack")+
+  scale_fill_manual(values = leg_pred_host_diff)+ #"Vahlkampfia" = "#66C2A5" is a maybe
+  geom_line(aes(x=Sample, y=100*Abundance_leg, group=1),stat="identity",color="blue",size=5)+
+  geom_line(aes(x=Sample, y=Grand_Total_Leg_per_L/20000000, group=1),stat="identity",color=ifelse(combined_leg_18S$Grand_Total_Leg_per_L < 1000000, "green", ifelse(combined_leg_18S$Grand_Total_Leg_per_L < 999999, "yellow", "red")),size=5)+
+  geom_point(aes(x=Sample, y=Grand_Total_Leg_per_L/20000000, group=1),stat="identity",color=ifelse(combined_leg_18S$Grand_Total_Leg_per_L < 999999, "green", ifelse(combined_leg_18S$Grand_Total_Leg_per_L < 9999999, "yellow", "red")),size=7)+
+  scale_x_discrete(limits = c("march", "april", "may", "june", "july","august"))+
+  scale_y_continuous(sec.axis = sec_axis(~./100)) + theme_minimal()
+dev.off()
+
 pdf("pred_host_leg_rel_abund.pdf", width=30, height=18)
 ggplot(combined_leg_18S)  + 
   geom_bar(aes(x=Sample, y=Abundance,fill=V7),stat="identity", position="stack")+
   scale_fill_manual(values = leg_pred_host_diff)+ #"Vahlkampfia" = "#66C2A5" is a maybe
-  geom_line(aes(x=Sample, y=100*Abundance_leg, group=1),stat="identity",color="red",size=5)+
+  geom_line(aes(x=Sample, y=100*Abundance_leg, group=1),stat="identity",color="blue",size=5)+
+  geom_line(aes(x=Sample, y=Grand_Total_Leg_per_L/20000000, group=1),stat="identity",color=ifelse(combined_leg_18S$Grand_Total_Leg_per_L < 1000000, "green", ifelse(combined_leg_18S$Grand_Total_Leg_per_L < 999999, "yellow", "red")),size=5)+
+  geom_point(aes(x=Sample, y=Grand_Total_Leg_per_L/20000000, group=1),stat="identity",color=ifelse(combined_leg_18S$Grand_Total_Leg_per_L < 999999, "green", ifelse(combined_leg_18S$Grand_Total_Leg_per_L < 9999999, "yellow", "red")),size=7)+
   scale_x_discrete(limits = c("march", "april", "may", "june", "july","august"))+
   scale_y_continuous(sec.axis = sec_axis(~./100)) + theme_minimal()
 dev.off()

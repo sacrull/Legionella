@@ -137,7 +137,7 @@ filter1_BH_pear <- subset(flatten_ASV_pear5, BH < .05)
 filter2_BH_pear <- filter1_BH_pear[, c(1:3)]
 
 
-pdf("BH_may_june_pear_ordered_clean.pdf", width = 14, height= 14)
+pdf("BH_may_june_pear_ordered_cleantest.pdf", width = 14, height= 14)
 chordDiagram(filter2_BH_pear, order = ordered_list2, transparency = 0.5, grid.col = leg_pred_host_diff, col = ifelse(filter2_BH_pear$origin == "Legionella", ifelse(filter2_BH_pear$value > 0, ifelse(filter2_BH_pear$value > 0.7, "#0487fb", ifelse(filter2_BH_pear$value > 0.5, "#04F0FB", "#04FB38")), "red") , "gray"),
 	annotationTrack = "grid", preAllocateTracks = list(track.height = 0.1))
 

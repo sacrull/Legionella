@@ -12,25 +12,26 @@ library(ggplot2)
 
 setwd("/home/suzanne/legionella/silva_plots/spieceasi/pred_host_am")
 #reading sequence tables
-seqtab_18S <- read.table("feature-table-18S.txt", header=T, row.names=1)
+seqtab_18S <- read.table("../18S-ASV-renamed.txt", header=T, row.names=1)
 seqtab_18S_trans <- t(seqtab_18S)
 otu_18S <-otu_table(seqtab_18S_trans, taxa_are_rows=F)
 #taxa_names(otu_18S)
 
 #reading in taxonomy
-tax_18S <- read.table("taxonomy_18S_clean.txt", header=F, row.names=1, sep="\t")
+tax_18S <- read.table("../18S-tax-renamed.txt", header=F, row.names=1, sep="\t")
 tax_18S_phylo <- tax_table(as.matrix(tax_18S))
 #taxa_names(tax_18S_phylo)
 
 #reeading in metadata
-map_18S <- read.table("metadata_unsure_18S_R.txt", sep="\t", header=T, row.names=1)
+map_18S <- read.table("../metadata_unsure_18S_R.txt", sep="\t", header=T, row.names=1)
 map_map_18S <- sample_data(map_18S)
 
 #physeq_16S_filter1 = subset_taxa(physeq_16S, V5=="Legionellales")
 physeq_18S <- merge_phyloseq(otu_18S, map_map_18S, tax_18S_phylo)
 #known hosts and predator of legionella
-physeq_18S_filter1 = subset_taxa(physeq_18S, V3=="Amoebozoa" | V3=="Heterolobosea" | V3=="Ciliophora" |V3=="Cercozoa")
-
+physeq_18S2 <- prune_samples(sample_sums(physeq_18S) > 5000, physeq_18S) #remove less than 2000 reads
+rare_18S <- rarefy_even_depth(physeq_18S2, rngseed=1, sample.size=0.99*min(sample_sums(physeq_18S2)), replace=F)
+physeq_18S_filter1 = subset_taxa(rare_18S, V3=="Amoebozoa" | V3=="Heterolobosea" | V3=="Ciliophora" |V3=="Cercozoa")
 #remove empty samples
 to_remove <- c("mar30_E_55", "mar30_H2O_57") #removed those samples since they didnt have any OTUs of interest
 physeq_18S_filter2 <- prune_samples(!(sample_names(physeq_18S_filter1) %in% to_remove), physeq_18S_filter1)
@@ -47,38 +48,33 @@ data$V7[data$Abundance < 0.01] <- "< 1% abund" # rename low freq phyla
 medians <- plyr::ddply(data, ~V7, function(x) c(median=median(x$Abundance)))
 medians
 #get just useful columns
-rel_18S <- data[,c(2,3,42)]
+rel_18S <- data[,c(2,3,43)]
 
 
 #sanity check
 sum(data[data$Sample == 'april',]$Abundance)
 
 
-pdf("pred_host_rel_abund_month_test4.pdf", width=30, height=18)
-ggplot(data, aes(x=Sample, y=Abundance, fill=V7)) + geom_bar(aes(), stat="identity", position="stack") + 
-  scale_x_discrete(limits = c("march", "april", "may", "june", "july","august")) + theme_minimal()
-dev.off()
-
-
 #getting legionella abudance data
-seqtab_16S <- read.table("feature-table-16S.txt", header=T, row.names=1)
+seqtab_16S <- read.table("../feature-table-16S.txt", header=T, row.names=1)
 seqtab_16S_trans <- t(seqtab_16S)
 otu_16S <-otu_table(seqtab_16S_trans, taxa_are_rows=F)
 #taxa_names(otu_16S)
 
 #reading in taxonomy
-tax_16S <- read.table("taxonomy_16S.txt", header=F, row.names=1, sep="\t")
+tax_16S <- read.table("../taxonomy_16S.txt", header=F, row.names=1, sep="\t")
 tax_16S_phylo <- tax_table(as.matrix(tax_16S))
 #taxa_names(tax_16S_phylo)
 
 #reeading in metadata
-map_16S <- read.table("metadata_unsure_16S_R.txt", sep="\t", header=T, row.names=1)
+map_16S <- read.table("../metadata_unsure_16S_R.txt", sep="\t", header=T, row.names=1)
 map_map_16S <- sample_data(map_16S)
 
 #make 16S and 18S phyloseq object from qiime2
 physeq_16S <- merge_phyloseq(otu_16S, map_map_16S, tax_16S_phylo)
-
-ps16 <- merge_samples(physeq_16S, "month") #combine by month
+physeq_16S1 <- prune_samples(sample_sums(physeq_16S) > 10000, physeq_16S) #remove less than 2000 reads
+rare_16S <- rarefy_even_depth(physeq_16S1, rngseed=1, sample.size=0.99*min(sample_sums(physeq_16S1)), replace=F)
+ps16 <- merge_samples(rare_16S, "month") #combine by month
 
 #get relative abundance 
 rel.abund.16S <- transform_sample_counts(ps16, function(x) x/sum(x))
@@ -88,7 +84,7 @@ data_16S$V7 <- as.character(data_16S$V7) #convert character
 
 #get just legionella abundance
 leg <- data_16S[data_16S$V7 == 'Legionella',]
-leg_rel <- leg[, c(2,3,42)]
+leg_rel <- leg[, c(2,3,43, 24)]
 colnames(leg_rel)[2] <- "Abundance_leg"
 colnames(leg_rel)[3] <- "Genus"
 
@@ -96,11 +92,34 @@ colnames(leg_rel)[3] <- "Genus"
 #combine 18S and legionella abudance data
 combined_leg_18S <- left_join(rel_18S, leg_rel, by = join_by(Sample == Sample))
 
-pdf("pred_host_leg.pdf", width=30, height=18)
+pdf("pred_host_leg_rel_abund.pdf", width=30, height=18)
+ggplot(combined_leg_18S)  + 
+  geom_bar(aes(x=Sample, y=Abundance,fill=V7),stat="identity", position="stack")+
+  scale_fill_manual(values = leg_pred_host_diff)+ #"Vahlkampfia" = "#66C2A5" is a maybe
+  geom_line(aes(x=Sample, y=100*Abundance_leg, group=1),stat="identity",color="blue",size=5)+
+  geom_line(aes(x=Sample, y=Grand_Total_Leg_per_L/20000000, group=1),stat="identity",color=ifelse(combined_leg_18S$Grand_Total_Leg_per_L < 1000000, "green", ifelse(combined_leg_18S$Grand_Total_Leg_per_L < 999999, "yellow", "red")),size=5)+
+  geom_point(aes(x=Sample, y=Grand_Total_Leg_per_L/20000000, group=1),stat="identity",color=ifelse(combined_leg_18S$Grand_Total_Leg_per_L < 999999, "green", ifelse(combined_leg_18S$Grand_Total_Leg_per_L < 9999999, "yellow", "red")),size=7)+
+  scale_x_discrete(limits = c("march", "april", "may", "june", "july","august"))+
+  scale_y_continuous(sec.axis = sec_axis(~./100)) + theme_minimal()
+dev.off()
+
+combined_leg_18S[combined_leg_18S$Genus == 'Legionella',]
+
+
+
+
+
+
+combined_leg_18S[is.element(combined_leg_18S$V7, c("Acanthamoeba", "Echinamoeba", "Korotnevella", "Naegleria", "Tetrahymena",
+  "Vannella","Vermamoeba")), ]
+as.data.frame(tax_table(glom))[is.element(as.data.frame(tax_table(glom))$V7, c("Vannella")), ]
+tax_table(glom)
+
+pdf("pred_host_leg_test1.pdf", width=30, height=18)
 ggplot(combined_leg_18S)  + 
   geom_bar(aes(x=Sample, y=Abundance, fill=V7),stat="identity", position="stack")+
   geom_line(aes(x=Sample, y=100*Abundance_leg, group=1),stat="identity",color="red",size=5)+
-  scale_x_discrete(limits = c("march", "april", "may", "june", "july","august"))+
+  #scale_x_discrete(limits = c("march", "april", "may", "june", "july","august"))+
   scale_y_continuous(sec.axis = sec_axis(~./1000)) + theme_minimal()
 dev.off()
 
@@ -110,10 +129,9 @@ leg_pred_host_diff=c("Legionella"="plum3","Acanthamoeba" = "#D53E4F", "Echinamoe
 pdf("pred_host_leg_clean.pdf", width=30, height=18)
 ggplot(combined_leg_18S)  + 
   geom_bar(aes(x=Sample, y=Abundance,fill=V7),stat="identity", position="stack")+
-  scale_fill_manual(values = c("Acanthamoeba" = "#D53E4F", "Dactylopodida" = "#F46D43", "Echinamoeba"="#FDAE61", "Korotnevella" ="#FEE08B", 
-      "Naegleria"="#E6F598", "Tetrahymena"="#ABDDA4", "Vannella" = "#66C2A5","Vermamoeba"="#3288BD"))+ #"Vahlkampfia" = "#66C2A5" is a maybe
+  scale_fill_manual(values = leg_pred_host_diff) + #"Vahlkampfia" = "#66C2A5" is a maybe
   geom_line(aes(x=Sample, y=100*Abundance_leg, group=1),stat="identity",color="red",size=5)+
-  scale_x_discrete(limits = c("march", "april", "may", "june", "july","august"))+
+  scale_x_discrete(limits = c("3/15/16","3/24/16","3/30/16","4/5/16","4/13/16","4/20/16","4/27/16","5/5/16","5/10/16","5/18/16","5/25/16","6/1/16","6/7/16","6/21/16","7/7/16","7/20/16","8/3/16"))+
   scale_y_continuous(sec.axis = sec_axis(~./1000)) + theme_minimal()
 dev.off()
 

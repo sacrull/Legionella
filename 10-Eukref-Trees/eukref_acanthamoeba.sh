@@ -70,7 +70,7 @@ mv annotations.acan.txt reference_trees/
 #sed 's/18S_rRNA_nucleus_clone_.*_Eukaryota_Amoebozoa_Discosea_Discosea_X_Flabellinia_Vannellida_Vannellidae_//g' temp3 > temp4
 #sed 's/_U//g' temp4 > annotations_vannella.txt
 
-mv RAxML_bipartitions.acan_ref.tre reference_trees
+mv RAxML_bipartitions.acan_ref.tre ./reference_trees
 
 #skipping unassigned ASVs since only interested in the assigned ones
 #create a list of all ASV ids vannella_ASV_names

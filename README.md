@@ -1,1 +1,2 @@
-Howdy
+# Howdy
+This is the Github repository for the Legionella Manuscript. It documents the steps taken to analyze and visualize the data as well as all the scripts used. If you have any questions about the code/steps please reach out!
